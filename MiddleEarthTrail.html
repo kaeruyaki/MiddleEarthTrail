@@ -612,7 +612,7 @@ function showEncounterView(title, description, choices) {
 function showCampView(isForcedNight) {
     stopGameLoop();
     let title = isForcedNight ? "The Day's Journey is Over" : "You Make Camp";
-    let description = isForcedNight ? "Darkness has fallen. You must rest before continuing." : "You decide to pause your journey and set up camp to rest and recover.";
+    let description = isForcedNight ? "Darkness has fallen. You make camp and rest." : "You decide to pause your journey and set up camp to rest and recover.";
     
     mainView.innerHTML = `
         <div class="text-center mb-6">
@@ -622,7 +622,7 @@ function showCampView(isForcedNight) {
         </div>
         <div id="camp-results" class="text-center my-4 text-lg text-emerald-300 min-h-[2rem]"></div>
         <div class="mt-auto grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6">
-            <button id="break-camp-btn" class="game-button bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform hover:scale-105 col-span-full sm:col-span-1">Break Camp</button>
+            <button id="break-camp-btn" class="game-button bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform hover:scale-105 col-span-full sm:col-span-1">Continue</button>
             <button id="extended-rest-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Extended Rest (24h)</button>
             <button id="forage-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Forage (6h)</button>
             <button id="hunt-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Hunt (4h)</button>
