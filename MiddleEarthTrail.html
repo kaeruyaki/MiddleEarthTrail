@@ -49,6 +49,14 @@
              stroke-linecap: butt;
              stroke-linejoin: miter;
         }
+        .map-feature {
+            fill: none;
+            stroke: #52525b; /* Zinc 600 */
+            stroke-width: 1.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body class="bg-zinc-900 text-stone-300">
@@ -71,9 +79,19 @@
                 <p class="text-stone-400">All-arounder</p>
             </div>
         </div>
-        <div class="mb-8">
+        <div class="mb-4">
             <label for="debug-start-select" class="mr-2 text-stone-400">Debug Start:</label>
             <select id="debug-start-select" class="bg-zinc-800 border border-zinc-700 rounded-md px-3 py-1"></select>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4 mb-8 text-stone-300">
+            <div>
+                <input type="checkbox" id="debug-quick-travel">
+                <label for="debug-quick-travel">Quick Travel (1 Day/Leg)</label>
+            </div>
+            <div>
+                <input type="checkbox" id="debug-story-only">
+                <label for="debug-story-only">Story Mode Only (No Random Encounters)</label>
+            </div>
         </div>
         <button id="begin-journey-button" class="font-title text-2xl bg-amber-700 hover:bg-amber-600 text-amber-50 font-bold py-3 px-12 rounded-lg shadow-lg transition-transform hover:scale-105 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed" disabled>Begin Journey</button>
     </div>
@@ -174,7 +192,7 @@ const townActions = {
     ],
     'rivendell': [
         { id: 'rivendell_rest', text: "Rest", action: (dialogueEl) => { advanceTime(8); gameState.fellowship.forEach(m => m.health = Math.min(100, m.health + 25)); gameState.morale = 100; dialogueEl.innerHTML = `You rest deeply through the night and into the next day in the Last Homely House. Your health and spirits are fully restored.`; } },
-        { id: 'rivendell_council', text: "Attend the Council of Elrond", oneTime: true, action: (dialogueEl) => { advanceTime(4); storyTriggers.rivendell(gameState); dialogueEl.innerHTML = `The council lasts for many hours. The Fellowship of the Ring is formed! Nine companions will set out. You must now choose the path forward.`; } },
+        { id: 'rivendell_council', text: "Attend the Council of Elrond", oneTime: true, action: (dialogueEl) => { advanceTime(4); storyTriggers.rivendell(gameState); dialogueEl.innerHTML = `The council lasts for many hours. Elrond declares that the Ring must be destroyed in the fires of Mount Doom. The Fellowship of the Ring is formed to aid the Ringbearer! Legolas, Gimli, Boromir, and Gandalf join your cause.`; } },
         { id: 'rivendell_leave', text: "Leave Rivendell", isLeaveAction: true, condition: () => gameState.flags.councilOfElrondComplete, action: () => { gameState.currentLocationKey = 'caradhras_pass'; gameState.pathTaken.push('caradhras_pass'); showTravelView(); } }
     ]
 };
@@ -200,13 +218,37 @@ const encounters = {
             { text: "Attempt to push through the snow", action: () => {
                 gameState.fellowship.forEach(m => m.health -= 25);
                 gameState.morale -= 30;
-                return `You fight against the blizzard for hours, but the cruel magic of the mountain is too strong. Beaten and frostbitten, you are forced to turn back. There is another way... through the darkness of Moria.`;
+                if (Math.random() < 0.2) { // 20% chance to succeed
+                    gameState.currentLocationKey = 'lothlorien';
+                    gameState.pathTaken.push('lothlorien');
+                    return `Against all odds, you endure the storm's wrath! The pass is behind you, and the golden wood of Lothlórien lies ahead. The ordeal has left you battered but resolute.`;
+                } else {
+                    gameState.currentLocationKey = 'moria';
+                    gameState.pathTaken.pop();
+                    gameState.pathTaken.push('moria');
+                    return `You fight against the blizzard for hours, but the cruel magic of the mountain is too strong. Beaten and frostbitten, you are forced to turn back. There is another way... through the darkness of Moria.`;
+                }
             }},
             { text: "Turn back and take the path through Moria", action: () => {
                 gameState.currentLocationKey = 'moria';
                 gameState.pathTaken.pop(); // Remove caradhras_pass
                 gameState.pathTaken.push('moria');
+                // This will show the result, and then the next game loop will handle arriving at Moria.
                 return `The mountain has defeated you. With heavy hearts, you turn back and take the dark and secret way through the Mines of Moria.`;
+            }}
+        ]
+    },
+    'moria': {
+        name: "The Bridge of Khazad-dûm",
+        description: "You have fled through the endless dark of Moria, but at the bridge, a shadow rises from the depths. A Balrog of Morgoth, a demon of the ancient world, blocks your path. Gandalf turns to face it. 'You cannot pass!' he cries.",
+        type: 'story',
+        trigger: 'landmark_arrival',
+        choices: [
+            { text: "Fly, you fools!", action: () => { 
+                storyTriggers.moria(gameState);
+                gameState.currentLocationKey = 'lothlorien';
+                gameState.pathTaken.push('lothlorien');
+                return `Gandalf confronts the Balrog, and both fall into the abyss. The Fellowship escapes, but their guide and friend is lost. Grief-stricken, you make your way to the woods of Lothlórien.`;
             }}
         ]
     },
@@ -376,7 +418,7 @@ function meetStrider() {
         gameState.fellowship.push({ name: 'Strider', race: 'Man', health: 100 });
         displayEvent({
             name: "A Ranger in the Corner",
-            description: "The mysterious ranger approaches your table. 'I am called Strider,' he says. 'I know of the burden you carry, and the road ahead is dangerous. You will need my help.'",
+            description: "The mysterious ranger approaches your table. 'I am called Strider,' he says. 'I know of the burden you carry, and the road ahead is dangerous. You will need my help.' His eyes are keen and he seems trustworthy, despite his rough appearance.",
             choices: [
                 { text: "Accept his offer", action: () => `Strider has joined your party. His knowledge of the wild will be invaluable.` }
             ]
@@ -416,10 +458,15 @@ const storyTriggers = {
         const boromir = state.fellowship.find(m => m.name === 'Boromir');
         if (boromir) boromir.health = 0;
         state.fellowship = state.fellowship.filter(m => ['Frodo', 'Sam'].includes(m.name));
-    }
+    },
+    'moria': (state) => {
+        const gandalf = state.fellowship.find(m => m.name === 'Gandalf');
+        if (gandalf) gandalf.health = 0;
+        state.morale -= 40; // Huge morale hit
+    },
 };
 
-function setupNewGame(profession, startKey = 'shire') {
+function setupNewGame(profession, startKey = 'shire', debugOptions = {}) {
     // 1. Base State Initialization
     gameState = {
         totalHours: 11,
@@ -444,7 +491,12 @@ function setupNewGame(profession, startKey = 'shire') {
         completedTownActions: new Set(),
         inventory: { athelas: 0, lembas: 0 },
         buffs: {},
-        flags: { gollumFollowing: false, councilOfElrondComplete: false },
+        flags: { 
+            gollumFollowing: false, 
+            councilOfElrondComplete: false,
+            isQuickTravel: debugOptions.isQuickTravel || false,
+            isStoryOnly: debugOptions.isStoryOnly || false,
+        },
     };
 
     // 2. Simulate journey up to the startKey
@@ -498,7 +550,8 @@ function gameLoop() {
         return;
     }
     
-    gameState.distanceTraveled += HOURLY_DISTANCE_TRAVEL;
+    const travelMultiplier = gameState.flags.isQuickTravel ? 12 : 1;
+    gameState.distanceTraveled += HOURLY_DISTANCE_TRAVEL * travelMultiplier;
     gameState.fellowship.forEach(m => { if (m.health > 0) m.health -= (DAILY_HEALTH_LOSS / 12); });
     
     const currentLocData = journeyData[gameState.currentLocationKey];
@@ -529,7 +582,7 @@ function gameLoop() {
     }
     const hourlyEncounterChance = encountersPerDay / 12;
     
-    if (Math.random() < hourlyEncounterChance) {
+    if (!gameState.flags.isStoryOnly && Math.random() < hourlyEncounterChance) {
         const validEncounters = Object.values(encounters).filter(e => e.trigger === 'travel' && e.weight > 0 && (!e.condition || e.condition()));
         if (validEncounters.length > 0) {
             const totalWeight = validEncounters.reduce((sum, e) => sum + e.weight, 0);
@@ -856,6 +909,7 @@ const campActions = {
         if (roll < 0.2) {
             stopGameLoop();
             displayEvent(encounters['orc-patrol']);
+            return; // Exit here to prevent updating a non-existent element
         } else if (roll < 0.6) {
             const s = Math.floor(Math.random() * 10) + 5;
             gameState.supplies += s;
@@ -863,7 +917,10 @@ const campActions = {
         } else {
             resultText = `<p class='text-amber-400'>You scavenged for most of the day but found nothing of note.</p>`;
         }
-        document.getElementById('camp-results').innerHTML = resultText;
+        const campResultsEl = document.getElementById('camp-results');
+        if (campResultsEl) {
+            campResultsEl.innerHTML = resultText;
+        }
         updateUI();
     },
     extendedRest: () => {
@@ -879,12 +936,25 @@ const campActions = {
 function drawMap(svgElement) {
     svgElement.innerHTML = ''; 
     
-    // Landmass
-    const landPath = 'M250 150 C 150 200, 150 300, 180 350 C 150 450, 250 550, 280 600 L 350 700 L 500 750 L 650 720 L 750 680 L 800 600 L 850 500 L 820 400 L 750 300 L 600 250 L 450 200 L 300 180 Z';
-    const land = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    land.setAttribute('d', landPath);
-    land.setAttribute('class', 'fill-stone-800/50 stroke-stone-600/50 stroke-2');
-    svgElement.appendChild(land);
+    // Landmass & Features
+    const features = {
+        coast: 'M130,340 C100,450 150,550 280,600 L350,700 L500,750 L650,720 L750,680 L800,600 L850,500 L820,400 C800,300 700,250 600,250 C500,250 400,200 300,180 C200,150 150,250 130,340 Z',
+        misty_mountains: 'M400,100 C420,200 440,300 450,400 C460,500 480,600 500,700',
+        mordor_mountains_n: 'M680,580 L750,580 L820,590',
+        mordor_mountains_w: 'M680,580 L670,650 L680,720',
+        mirkwood: 'M500,200 C520,250 530,350 500,450',
+        fangorn: 'M550,580 C530,620 550,660 580,680'
+    };
+    
+    for (const key in features) {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', features[key]);
+        path.setAttribute('class', 'map-feature');
+        if (key === 'coast') {
+            path.classList.add('fill-stone-800/50');
+        }
+        svgElement.appendChild(path);
+    }
 
     const takenRouteGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     for (let i = 0; i < gameState.pathTaken.length - 1; i++) {
@@ -902,10 +972,11 @@ function drawMap(svgElement) {
 
     const landmarksGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     for (const key in journeyData) {
+        const landmark = journeyData[key];
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('cx', landmark.x); circle.setAttribute('cy', landmark.y);
+        
         if (gameState.discoveredStops.has(key)) {
-            const landmark = journeyData[key];
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', landmark.x); circle.setAttribute('cy', landmark.y);
             circle.setAttribute('r', '8');
             circle.setAttribute('class', 'fill-amber-500 stroke-zinc-900 stroke-2');
             landmarksGroup.appendChild(circle);
@@ -915,6 +986,10 @@ function drawMap(svgElement) {
             text.textContent = landmark.name;
             text.setAttribute('class', 'map-landmark-label');
             landmarksGroup.appendChild(text);
+        } else {
+            circle.setAttribute('r', '3');
+            circle.setAttribute('class', 'fill-stone-500');
+            landmarksGroup.appendChild(circle);
         }
     }
     svgElement.appendChild(landmarksGroup);
@@ -946,11 +1021,11 @@ function drawMap(svgElement) {
 }
 
 // --- INITIALIZATION ---
-function initializeGame(profession, startKey) {
+function initializeGame(profession, startKey, debugOptions) {
     startScreen.style.display = 'none';
     gameContainer.style.display = 'block';
     
-    setupNewGame(profession, startKey);
+    setupNewGame(profession, startKey, debugOptions);
     
     const startingLandmark = journeyData[startKey];
     if (startingLandmark.type === 'town') {
@@ -994,7 +1069,11 @@ function initializeStartScreen() {
 
     beginButton.onclick = () => {
         if(selectedProfession) {
-            initializeGame(selectedProfession, debugSelect.value);
+            const debugOptions = {
+                isQuickTravel: document.getElementById('debug-quick-travel').checked,
+                isStoryOnly: document.getElementById('debug-story-only').checked,
+            };
+            initializeGame(selectedProfession, debugSelect.value, debugOptions);
         }
     };
 }
