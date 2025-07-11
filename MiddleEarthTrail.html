@@ -148,35 +148,34 @@ const professions = {
 };
 
 const journeyData = {
-    'shire': { name: "The Shire", x: 180, y: 350, distance: 0, legName: "The Road to Bree", next: 'bree' },
-    'bree': { name: "Bree", x: 280, y: 360, distance: 100, legName: "To Weathertop", next: 'weathertop', type: 'town', description: "You arrive in the bustling town of Bree and find lodging at the Prancing Pony. The common room is filled with folk of all sorts, and a mysterious, hooded man watches you from a dark corner." },
-    'weathertop': { name: "Weathertop", x: 320, y: 358, distance: 150, legName: "The Road to the Trollshaws", next: 'trollshaws' },
-    'trollshaws': { name: "Trollshaws", x: 350, y: 355, distance: 175, legName: "The Road to Rivendell", next: 'rivendell' },
-    'rivendell': { name: "Rivendell", x: 400, y: 350, distance: 250, next: null, type: 'town', description: "You have come to the Last Homely House East of the Sea. The air is filled with peace and ancient wisdom. Elrond greets you, his eyes holding the light of stars." },
-    'caradhras': { name: "Pass of Caradhras", x: 450, y: 400, distance: 350, legName: "Journey to Lórien", next: 'lothlorien' },
-    'moria': { name: "Mines of Moria", x: 460, y: 450, distance: 400, legName: "Journey to Lórien", next: 'lothlorien' },
-    'lothlorien': { name: "Lothlórien", x: 520, y: 480, distance: 550, legName: "The Great River", next: 'anduin' },
-    'anduin': { name: "Anduin River", x: 550, y: 550, distance: 650, legName: "The Breaking of the Fellowship", next: 'amonhen' },
-    'amonhen': { name: "Amon Hen", x: 560, y: 600, distance: 700, legName: "The Emyn Muil", next: 'emynmuil' },
-    'emynmuil': { name: "Emyn Muil", x: 600, y: 620, distance: 750, legName: "The Dead Marshes", next: 'deadmarshes' },
-    'deadmarshes': { name: "Dead Marshes", x: 680, y: 610, distance: 800, legName: "To the Black Gate", next: 'blackgate' },
-    'blackgate': { name: "The Black Gate", x: 750, y: 600, distance: 900, next: null },
-    'cirithungol': { name: "Cirith Ungol", x: 780, y: 650, distance: 950, legName: "The Land of Shadow", next: 'mountdoom' },
-    'mountdoom': { name: "Mount Doom", x: 850, y: 630, distance: 1000, type: 'end' }
+    'shire': { name: "The Shire", x: 180, y: 350, distance: 0, legName: "The Road to Bree", next: 'bree', locationType: 'wild' },
+    'bree': { name: "Bree", x: 280, y: 360, distance: 100, legName: "To Weathertop", next: 'weathertop', type: 'town', description: "You arrive in the bustling town of Bree and find lodging at the Prancing Pony. The common room is filled with folk of all sorts, and a mysterious, hooded man watches you from a dark corner.", locationType: 'town' },
+    'weathertop': { name: "Weathertop", x: 320, y: 358, distance: 150, legName: "The Road to the Trollshaws", next: 'trollshaws', locationType: 'wild' },
+    'trollshaws': { name: "Trollshaws", x: 350, y: 355, distance: 175, legName: "The Road to Rivendell", next: 'rivendell', locationType: 'wild' },
+    'rivendell': { name: "Rivendell", x: 400, y: 350, distance: 250, next: 'caradhras_pass', type: 'town', description: "You have come to the Last Homely House East of the Sea. The air is filled with peace and ancient wisdom. Elrond greets you, his eyes holding the light of stars.", locationType: 'town' },
+    'caradhras_pass': { name: "Pass of Caradhras", x: 450, y: 400, distance: 300, legName: "Over the Misty Mountains", next: 'lothlorien', locationType: 'wild' },
+    'moria': { name: "Mines of Moria", x: 460, y: 450, distance: 350, legName: "Through Khazad-dûm", next: 'lothlorien', locationType: 'wild' },
+    'lothlorien': { name: "Lothlórien", x: 520, y: 480, distance: 550, legName: "The Great River", next: 'anduin', locationType: 'wild' },
+    'anduin': { name: "Anduin River", x: 550, y: 550, distance: 650, legName: "The Breaking of the Fellowship", next: 'amonhen', locationType: 'wild' },
+    'amonhen': { name: "Amon Hen", x: 560, y: 600, distance: 700, legName: "The Emyn Muil", next: 'emynmuil', locationType: 'wild' },
+    'emynmuil': { name: "Emyn Muil", x: 600, y: 620, distance: 750, legName: "The Dead Marshes", next: 'deadmarshes', locationType: 'wild' },
+    'deadmarshes': { name: "Dead Marshes", x: 680, y: 610, distance: 800, legName: "To the Black Gate", next: 'blackgate', locationType: 'wild' },
+    'blackgate': { name: "The Black Gate", x: 750, y: 600, distance: 900, next: null, locationType: 'wild' },
+    'cirithungol': { name: "Cirith Ungol", x: 780, y: 650, distance: 950, legName: "The Land of Shadow", next: 'mountdoom', locationType: 'wild' },
+    'mountdoom': { name: "Mount Doom", x: 850, y: 630, distance: 1000, type: 'end', locationType: 'wild' }
 };
 
 const townActions = {
     'bree': [
-        { id: 'bree_gossip', text: "Listen for Rumors (1 Hr)", action: (dialogueEl) => { advanceTime(1); dialogueEl.innerHTML = `You hear tales of black riders on the road and troubles from the south. The mood is grim.`; } },
-        { id: 'bree_trade', text: "Trade for Supplies (15 Gold)", condition: () => gameState.gold >= 15, action: (dialogueEl) => { gameState.gold -= 15; gameState.supplies += 25; dialogueEl.innerHTML = `You trade 15 gold for 25 supplies.`; } },
-        { id: 'bree_meet_strider', text: "Speak to the hooded man", oneTime: true, action: (dialogueEl) => { meetStrider(); dialogueEl.innerHTML = `The ranger's name is Strider. He knows of your quest and offers to guide you.`; } },
+        { id: 'bree_gossip', text: "Listen for Rumors", action: (dialogueEl) => { advanceTime(1); dialogueEl.innerHTML = `You spend some time listening to chatter and hear tales of black riders on the road and troubles from the south. The mood is grim.`; } },
+        { id: 'bree_trade', text: "Trade for Supplies", condition: () => gameState.gold >= 15, action: (dialogueEl) => { advanceTime(1); gameState.gold -= 15; gameState.supplies += 25; dialogueEl.innerHTML = `The trade takes a short while. You get 25 supplies for 15 gold.`; } },
+        { id: 'bree_meet_strider', text: "Speak to the hooded man", oneTime: true, action: (dialogueEl) => { advanceTime(0.5); meetStrider(); dialogueEl.innerHTML = `You speak briefly with the ranger. His name is Strider. He knows of your quest and offers to guide you.`; } },
         { id: 'bree_leave', text: "Leave Bree", isLeaveAction: true, action: () => { if (!gameState.fellowship.some(m => m.name === 'Strider')) { meetStrider(); } gameState.currentLocationKey = 'weathertop'; gameState.pathTaken.push('weathertop'); showTravelView(); } }
     ],
     'rivendell': [
-        { id: 'rivendell_rest', text: "Rest in the Last Homely House (8 Hrs)", action: (dialogueEl) => { advanceTime(8); gameState.fellowship.forEach(m => m.health = Math.min(100, m.health + 25)); gameState.morale = 100; dialogueEl.innerHTML = `You rest deeply, and your health and spirits are fully restored.`; } },
-        { id: 'rivendell_council', text: "Attend the Council of Elrond", oneTime: true, action: (dialogueEl) => { storyTriggers.rivendell(gameState); dialogueEl.innerHTML = `The Fellowship of the Ring is formed! Nine companions will set out. You must now choose the path forward.`; } },
-        { id: 'rivendell_leave_caradhras', text: "Leave via Caradhras", isLeaveAction: true, condition: () => gameState.flags.councilOfElrondComplete, action: () => { gameState.currentLocationKey = 'caradhras'; gameState.pathTaken.push('caradhras'); showTravelView(); } },
-        { id: 'rivendell_leave_moria', text: "Leave via Mines of Moria", isLeaveAction: true, condition: () => gameState.flags.councilOfElrondComplete, action: () => { gameState.currentLocationKey = 'moria'; gameState.pathTaken.push('moria'); showTravelView(); } }
+        { id: 'rivendell_rest', text: "Rest", action: (dialogueEl) => { advanceTime(8); gameState.fellowship.forEach(m => m.health = Math.min(100, m.health + 25)); gameState.morale = 100; dialogueEl.innerHTML = `You rest deeply through the night and into the next day in the Last Homely House. Your health and spirits are fully restored.`; } },
+        { id: 'rivendell_council', text: "Attend the Council of Elrond", oneTime: true, action: (dialogueEl) => { advanceTime(4); storyTriggers.rivendell(gameState); dialogueEl.innerHTML = `The council lasts for many hours. The Fellowship of the Ring is formed! Nine companions will set out. You must now choose the path forward.`; } },
+        { id: 'rivendell_leave', text: "Leave Rivendell", isLeaveAction: true, condition: () => gameState.flags.councilOfElrondComplete, action: () => { gameState.currentLocationKey = 'caradhras_pass'; gameState.pathTaken.push('caradhras_pass'); showTravelView(); } }
     ]
 };
 
@@ -190,6 +189,25 @@ const encounters = {
         choices: [
             { text: "Frodo resists the urge", action: () => { const healthLost = Math.floor(Math.random() * 20) + 15; gameState.fellowship.find(m => m.name === 'Frodo').health -= healthLost; gameState.morale -= 30; return `Aragorn leaps to defend the hobbits, brandishing fire against the Wraiths. They are driven back, but not before Frodo is gravely wounded by a Morgul-blade! You must get him to Rivendell!`; } },
             { text: "Frodo puts on the Ring", action: () => { gameState.fellowship.find(m => m.name === 'Frodo').health -= 40; gameState.morale -= 40; return `Frodo vanishes, entering the wraith-world. The Witch-king strikes with a Morgul-blade, and a shard of ice enters Frodo's shoulder. He is fading fast! You must race to Rivendell!`; } }
+        ]
+    },
+    'caradhras_pass': {
+        name: "The Pass of Caradhras",
+        description: "As you climb higher into the mountains, the air grows thin and a cruel wind howls. A sudden, unnatural snowstorm descends, blinding you with swirling white. The voice of Saruman echoes in the storm, a fell magic seeking to crush you.",
+        type: 'story',
+        trigger: 'landmark_arrival',
+        choices: [
+            { text: "Attempt to push through the snow", action: () => {
+                gameState.fellowship.forEach(m => m.health -= 25);
+                gameState.morale -= 30;
+                return `You fight against the blizzard for hours, but the cruel magic of the mountain is too strong. Beaten and frostbitten, you are forced to turn back. There is another way... through the darkness of Moria.`;
+            }},
+            { text: "Turn back and take the path through Moria", action: () => {
+                gameState.currentLocationKey = 'moria';
+                gameState.pathTaken.pop(); // Remove caradhras_pass
+                gameState.pathTaken.push('moria');
+                return `The mountain has defeated you. With heavy hearts, you turn back and take the dark and secret way through the Mines of Moria.`;
+            }}
         ]
     },
     'amonhen': {
@@ -210,63 +228,63 @@ const encounters = {
     'fruit-trees': {
         name: "Fruit Trees", description: "You come upon a small, sun-dappled orchard of wild apple trees, their branches heavy with ripe fruit.", type: 'friendly', trigger: 'travel', weight: 8,
         choices: [
-            { text: "Eat your fill (1 Hour)", action: () => { advanceTime(1); gameState.fellowship.forEach(m => m.health = Math.min(100, m.health + 5)); gameState.morale = Math.min(100, gameState.morale + 5); return `The fresh fruit is delicious and revitalizing.`; } },
-            { text: "Gather for the road (2 Hours)", action: () => { advanceTime(2); const foodFound = Math.floor(Math.random() * 15) + 10; gameState.food += foodFound; return `You gather the best fruit, adding <span class="text-positive">${foodFound} food</span> to your stores.`; } },
+            { text: "Eat your fill", action: () => { advanceTime(1); gameState.fellowship.forEach(m => m.health = Math.min(100, m.health + 5)); gameState.morale = Math.min(100, gameState.morale + 5); return `You stop for a while to eat. The fresh fruit is delicious and revitalizing.`; } },
+            { text: "Gather for the road", action: () => { advanceTime(2); const foodFound = Math.floor(Math.random() * 15) + 10; gameState.food += foodFound; return `It takes some time, but you gather the best fruit, adding <span class="text-positive">${foodFound} food</span> to your stores.`; } },
             { text: "Do nothing", action: () => `You press on, leaving the bounty behind.` }
         ]
     },
     'orc-patrol': {
         name: "Orc Patrol", description: "A harsh guttural speech echoes from ahead. A patrol of Orcs, their scimitars cruelly sharp, march down the path. They have not yet seen you.", type: 'hostile', trigger: 'travel', weight: 7,
         choices: [
-            { text: "Set an ambush", action: () => { if (Math.random() < 0.75) { const s = Math.floor(Math.random() * 10); gameState.supplies += s; gameState.morale += 5; return `<span class="text-positive">The ambush is perfect!</span> You dispatch the Orcs swiftly, finding ${s} supplies.`; } else { gameState.fellowship.forEach(m => { if(m.health > 0) m.health -= (Math.random() * 15) }); gameState.morale -= 10; return `<span class="text-negative">They spot you too soon!</span> A fierce skirmish ensues.`; } } },
-            { text: "Attempt to sneak past (2 hours)", action: () => { advanceTime(2); if (Math.random() < 0.5) { return `<span class="text-positive">Success!</span> You slip by unnoticed.`; } else { const s = Math.floor(Math.random() * 10) + 5; gameState.supplies = Math.max(0, gameState.supplies - s); gameState.morale -= 10; return `<span class="text-negative">Spotted!</span> You drop ${s} supplies to create a diversion.`; } } },
-            { text: "Confront them head-on", action: () => { let txt = ""; gameState.fellowship.forEach(m => { if(m.health > 0) m.health -= (Math.random() * 25) }); gameState.morale -= 15; const c = performDeathRolls("battle"); if(c) { txt = `<span class="text-catastrophic">The battle is brutal.</span> ${c}`; } else { txt = `<span class="text-negative">The battle is brutal, leaving everyone wounded.</span>`; } return txt; } }
+            { text: "Set an ambush", action: () => { advanceTime(1); if (Math.random() < 0.75) { const s = Math.floor(Math.random() * 10); gameState.supplies += s; gameState.morale += 5; return `<span class="text-positive">The ambush is perfect!</span> You dispatch the Orcs swiftly, finding ${s} supplies.`; } else { gameState.fellowship.forEach(m => { if(m.health > 0) m.health -= (Math.random() * 15) }); gameState.morale -= 10; return `<span class="text-negative">They spot you too soon!</span> A fierce skirmish ensues.`; } } },
+            { text: "Attempt to sneak past", action: () => { advanceTime(2); if (Math.random() < 0.5) { return `<span class="text-positive">It takes a couple of tense hours, but you slip by unnoticed.</span>`; } else { const s = Math.floor(Math.random() * 10) + 5; gameState.supplies = Math.max(0, gameState.supplies - s); gameState.morale -= 10; return `<span class="text-negative">Spotted!</span> You drop ${s} supplies to create a diversion and escape.`; } } },
+            { text: "Confront them head-on", action: () => { advanceTime(1); let txt = ""; gameState.fellowship.forEach(m => { if(m.health > 0) m.health -= (Math.random() * 25) }); gameState.morale -= 15; const c = performDeathRolls("battle"); if(c) { txt = `<span class="text-catastrophic">The battle is brutal.</span> ${c}`; } else { txt = `<span class="text-negative">The battle is brutal, leaving everyone wounded.</span>`; } return txt; } }
         ]
     },
     'lost-in-wild': {
         name: "Lost in the Wild", description: "The landscape has become a monotonous, rolling terrain. The path is gone. You are lost.", type: "neutral", trigger: "travel", weight: 10,
         choices: [
-            { text: "Trust the Ranger (3 Hours)", condition: () => gameState.fellowship.some(m => m.name === 'Aragorn' && m.health > 0), action: () => { advanceTime(3); return `<span class="text-positive">Aragorn's skill guides you true.</span> You find the main path again.`; } },
-            { text: "Climb for a view (2 Hours)", action: () => { advanceTime(2); if (Math.random() < 0.6) { return `<span class="text-positive">From a high vantage, you spot the correct path.</span>`; } else { const m = gameState.fellowship.find(m => m.health > 0); m.health -= 10; return `<span class="text-negative">${m.name} slips and falls while climbing.</span> The path remains hidden.`; } } },
-            { text: "Press on blindly (4 Hours)", action: () => { advanceTime(4); gameState.morale -= 10; return `<span class="text-neutral">You wander for hours, your spirits sinking, before finally stumbling back onto the path.</span>`; } }
+            { text: "Trust the Ranger", condition: () => gameState.fellowship.some(m => m.name === 'Aragorn' && m.health > 0), action: () => { advanceTime(3); return `<span class="text-positive">Aragorn's skill guides you true after a few hours of searching.</span> You find the main path again.`; } },
+            { text: "Climb for a view", action: () => { advanceTime(2); if (Math.random() < 0.6) { return `<span class="text-positive">After a short climb, you spot the correct path from a high vantage.</span>`; } else { const m = gameState.fellowship.find(m => m.health > 0); m.health -= 10; return `<span class="text-negative">${m.name} slips and falls while climbing.</span> The path remains hidden.`; } } },
+            { text: "Press on blindly", action: () => { advanceTime(4); gameState.morale -= 10; return `<span class="text-neutral">You wander for hours, your spirits sinking, before finally stumbling back onto the path.</span>`; } }
         ]
     },
     'mountain-spring': {
         name: "Mountain Spring", description: "Tucked into a mossy rock face, you find a spring of crystal-clear water bubbling forth.", type: 'friendly', trigger: 'travel', weight: 8,
         choices: [
-            { text: "Drink deeply (1 Hour)", action: () => { advanceTime(1); gameState.fellowship.forEach(m => m.health = Math.min(100, m.health + 10)); gameState.morale += 10; return `The pure, cold water is incredibly refreshing.`; } },
-            { text: "Refill waterskins (30 Mins)", action: () => { advanceTime(0.5); gameState.buffs.sustainingWater = (gameState.buffs.sustainingWater || gameState.totalHours) + 24; return `You fill your waterskins. The water will sustain you for the next day.`; } },
+            { text: "Drink deeply", action: () => { advanceTime(1); gameState.fellowship.forEach(m => m.health = Math.min(100, m.health + 10)); gameState.morale += 10; return `You rest for a while. The pure, cold water is incredibly refreshing.`; } },
+            { text: "Refill waterskins", action: () => { advanceTime(0.5); gameState.buffs.sustainingWater = (gameState.buffs.sustainingWater || gameState.totalHours) + 24; return `You quickly fill your waterskins. The water will sustain you for the next day.`; } },
             { text: "Do nothing", action: () => `You ignore the spring.` }
         ]
     },
     'sudden-downpour': {
         name: "Sudden Downpour", description: "The sky opens up without warning, and a cold, driving rain begins to fall.", type: 'neutral', trigger: 'travel', weight: 10,
         choices: [
-            { text: "Push on", action: () => { gameState.fellowship.forEach(m => { if(m.health > 0) m.health -= 5 }); gameState.morale -= 5; return `You trudge on through the miserable rain, losing some health and morale.`; } },
-            { text: "Find shelter (2 Hours)", action: () => { advanceTime(2); return `You find a small overhang and wait for the worst of the storm to pass.`; } },
-            { text: "Use supplies to make shelter", condition: () => gameState.supplies >= 5, action: () => { gameState.supplies -= 5; return `You use 5 supplies to create a makeshift shelter.`; } }
+            { text: "Push on", action: () => { advanceTime(1); gameState.fellowship.forEach(m => { if(m.health > 0) m.health -= 5 }); gameState.morale -= 5; return `You trudge on through the miserable rain, losing some health and morale.`; } },
+            { text: "Find shelter", action: () => { advanceTime(2); return `You find a small overhang and wait for the worst of the storm to pass. It takes a couple of hours.`; } },
+            { text: "Use supplies to make shelter", condition: () => gameState.supplies >= 5, action: () => { advanceTime(0.5); gameState.supplies -= 5; return `You quickly use 5 supplies to create a makeshift shelter.`; } }
         ]
     },
     'wargs-wild': {
         name: "Wargs of the Wild", description: "A howl echoes through the hills. A pack of Wargs, monstrous wolves with a malevolent gleam in their eyes, has caught your scent.", type: 'hostile', trigger: 'travel', weight: 4,
         choices: [
-            { text: "Light fires to keep them at bay (1 Hour)", condition: () => gameState.supplies >= 10, action: () => { advanceTime(1); gameState.supplies -= 10; gameState.morale -= 5; return `You use 10 supplies to build protective fires. The Wargs snarl from the darkness but dare not approach.`; } },
-            { text: "Stand and fight", action: () => { let txt = ""; gameState.fellowship.forEach(m => { if(m.health > 0) m.health -= (Math.random() * 20 + 10) }); gameState.morale -= 20; const c = performDeathRolls("the Warg attack"); if(c) { txt = `<span class="text-catastrophic">The Wargs are terrifyingly fast and strong!</span> ${c}`; } else { txt = `<span class="text-negative">You fight off the beasts, but not without suffering grievous wounds.</span>`; } return txt; } },
-            { text: "Climb trees or rocks (3 Hours)", action: () => { advanceTime(3); gameState.morale -= 10; return `You scramble up high ground, out of reach. You are trapped for hours until the pack moves on.`; } }
+            { text: "Light fires to keep them at bay", condition: () => gameState.supplies >= 10, action: () => { advanceTime(1); gameState.supplies -= 10; gameState.morale -= 5; return `You quickly use 10 supplies to build protective fires. The Wargs snarl from the darkness for an hour but dare not approach.`; } },
+            { text: "Stand and fight", action: () => { advanceTime(1); let txt = ""; gameState.fellowship.forEach(m => { if(m.health > 0) m.health -= (Math.random() * 20 + 10) }); gameState.morale -= 20; const c = performDeathRolls("the Warg attack"); if(c) { txt = `<span class="text-catastrophic">The Wargs are terrifyingly fast and strong!</span> ${c}`; } else { txt = `<span class="text-negative">You fight off the beasts, but not without suffering grievous wounds.</span>`; } return txt; } },
+            { text: "Climb trees or rocks", action: () => { advanceTime(3); gameState.morale -= 10; return `You scramble up high ground, out of reach. You are trapped for hours until the pack moves on.`; } }
         ]
     },
     'athelas': {
         name: "Athelas (Kingsfoil)", description: "Aragorn kneels, his keen eyes spotting a patch of a seemingly plain weed. 'This is Athelas,' he murmurs. 'Kingsfoil.'", type: 'friendly', trigger: 'travel', weight: 2,
         condition: () => gameState.fellowship.some(m => m.name === 'Aragorn' && m.health > 0),
         choices: [
-            { text: "Gather it (1 Hour)", action: () => { advanceTime(1); gameState.inventory.athelas = (gameState.inventory.athelas || 0) + 1; return `You carefully gather the precious herb, adding one use of Athelas to your inventory.`; } },
+            { text: "Gather it", action: () => { advanceTime(1); gameState.inventory.athelas = (gameState.inventory.athelas || 0) + 1; return `You spend some time carefully gathering the precious herb, adding one use of Athelas to your inventory.`; } },
             { text: "Move on", action: () => `You leave the precious herb behind.` }
         ]
     },
     'abandoned-camp': {
         name: "An Abandoned Camp", description: "Through the trees, you see the faint grey smoke of a dying campfire. You approach cautiously to find a recently abandoned camp.", type: 'neutral', trigger: 'travel', weight: 7,
         choices: [
-            { text: "Search it (1 Hour)", action: () => { advanceTime(1); const r = Math.random(); if (r < 0.6) { const f = Math.floor(Math.random() * 10) + 5; gameState.food += f; return `Your search turns up ${f} leftover food rations. A lucky find!`; } else if (r < 0.8) { return `The camp is empty.`; } else { gameState.morale -= 10; return `It's a trap! A small band of goblins leap out. You fight them off but the encounter leaves you shaken.`; } } },
+            { text: "Search it", action: () => { advanceTime(1); const r = Math.random(); if (r < 0.6) { const f = Math.floor(Math.random() * 10) + 5; gameState.food += f; return `Your search turns up ${f} leftover food rations. A lucky find!`; } else if (r < 0.8) { return `The camp is empty.`; } else { gameState.morale -= 10; return `It's a trap! A small band of goblins leap out. You fight them off but the encounter leaves you shaken.`; } } },
             { text: "Ignore it", action: () => `It's too risky. You leave the camp untouched and move on.` }
         ]
     },
@@ -281,10 +299,34 @@ const encounters = {
         name: "Gollum's Pursuit", description: "In the quiet of the night, Sam hears it—a faint, wet, slapping sound from the rocks behind you, and a low, miserable whining. 'My preciousss...' Gollum is following you.", type: 'neutral', trigger: 'travel', weight: 1,
         condition: () => gameState.distanceTraveled > 400 && !gameState.flags.gollumFollowing,
         choices: [
-            { text: "Try to lose him (4 hours)", action: () => { advanceTime(4); gameState.morale -= 5; return `You take a difficult, treacherous path to shake the creature.`; } },
-            { text: "Confront him", action: () => { gameState.flags.gollumFollowing = true; return `You try to capture the creature, but he is too quick. You know he is still out there.`; } },
+            { text: "Try to lose him", action: () => { advanceTime(4); gameState.morale -= 5; return `You take a difficult, treacherous path for several hours to shake the creature.`; } },
+            { text: "Confront him", action: () => { advanceTime(0.5); gameState.flags.gollumFollowing = true; return `You try to capture the creature, but he is too quick. You know he is still out there.`; } },
             { text: "Ignore him", action: () => { gameState.flags.gollumFollowing = true; return `You do nothing. The unsettling presence continues to follow you.`; } }
         ]
+    },
+    'nazgul-sighting': {
+        name: "A Black Rider",
+        description: "A chilling shriek pierces the air. A Black Rider is near!",
+        type: 'hostile',
+        trigger: 'travel',
+        weight: 3,
+        condition: () => gameState.distanceTraveled < journeyData.rivendell.distance,
+        choices: function() {
+            const locationType = journeyData[gameState.currentLocationKey].locationType;
+            if (locationType === 'town') {
+                return [
+                    { text: "Barricade yourselves in the Inn", action: () => { advanceTime(3); gameState.morale -= 15; return `You spend a terrifying few hours barricaded inside as the Nazgûl searches the town. Eventually, it moves on.`; } },
+                    { text: "Flee the town immediately", action: () => { advanceTime(1); gameState.morale -= 10; return `You gather your things in a panic and flee into the wilderness, not stopping until the sun rises.`; } },
+                    { text: "Hide in the stables", action: () => { advanceTime(2); if (Math.random() < 0.3) { gameState.supplies = Math.max(0, gameState.supplies - 20); return `The Rider finds you! You create a diversion by releasing the horses and lose some supplies in the chaos.`; } else { return `You hide amongst the hay and animals. The Rider passes by, its presence chilling you to the bone.`; } } }
+                ];
+            } else { // wild
+                return [
+                    { text: "Run for a river crossing", action: () => { advanceTime(2); gameState.distanceTraveled += 5; return `You race for a nearby river, hoping the water will deter the wraith. The desperate flight takes its toll.`; } },
+                    { text: "Hide in the grass", action: () => { advanceTime(3); if (Math.random() < 0.5) { gameState.morale -= 20; return `The Rider passes so close you can hear its fell whispers. The terror is immense, but you remain unseen.`; } else { return `You lie still for what feels like an eternity. The Rider eventually moves on.`; } } },
+                    { text: "Ward with fire", condition: () => gameState.fellowship.some(m => m.name.includes('Aragorn')), action: () => { advanceTime(1); gameState.morale -= 5; return `Aragorn brandishes a torch, and the Rider recoils from the flame, giving you time to escape.`; } }
+                ];
+            }
+        }
     }
 };
 
@@ -316,9 +358,29 @@ function getHealthStatus(health) {
     return { text: 'Great', colorClass: 'text-green-300' };
 }
 
+function getTimeOfDayString(hour) {
+    const h = Math.floor(hour % 24);
+    if (h >= 23 || h < 4) return 'Midnight';
+    if (h < 6) return 'Before Dawn';
+    if (h < 8) return 'Dawn';
+    if (h < 12) return 'Morning';
+    if (h < 14) return 'Noon';
+    if (h < 17) return 'Afternoon';
+    if (h < 19) return 'Late Afternoon';
+    if (h < 21) return 'Evening';
+    return 'Night';
+}
+
 function meetStrider() {
     if (!gameState.fellowship.some(m => m.name === 'Strider' || m.name === 'Aragorn')) {
         gameState.fellowship.push({ name: 'Strider', race: 'Man', health: 100 });
+        displayEvent({
+            name: "A Ranger in the Corner",
+            description: "The mysterious ranger approaches your table. 'I am called Strider,' he says. 'I know of the burden you carry, and the road ahead is dangerous. You will need my help.'",
+            choices: [
+                { text: "Accept his offer", action: () => `Strider has joined your party. His knowledge of the wild will be invaluable.` }
+            ]
+        });
     }
 }
 
@@ -390,15 +452,15 @@ function setupNewGame(profession, startKey = 'shire') {
     const startIndex = canonicalPath.indexOf(startKey);
 
     if (startIndex > 0) {
-        const path_to_start = canonicalPath.slice(0, startIndex + 1);
-        gameState.pathTaken = path_to_start;
-        gameState.discoveredStops = new Set(path_to_start);
-
-        // Apply story triggers for each step in the path
+        const path_to_start = canonicalPath.slice(0, startIndex);
         path_to_start.forEach(locationKey => {
             if (storyTriggers[locationKey]) {
                 storyTriggers[locationKey](gameState);
             }
+            if (!gameState.pathTaken.includes(locationKey)) {
+                gameState.pathTaken.push(locationKey);
+            }
+            gameState.discoveredStops.add(locationKey);
         });
     }
     
@@ -521,6 +583,7 @@ function updateUI() {
         <div class="flex items-center">${ICONS.supplies} Supplies: ${Math.floor(gameState.supplies)}</div>
         <div class="flex items-center">${ICONS.morale} Morale: ${Math.floor(gameState.morale)}</div>
         <div class="flex items-center">${ICONS.gold} Gold: ${gameState.gold}</div>
+        <div class="flex items-center col-span-full sm:col-span-1 lg:col-span-2">${ICONS.day} ${getTimeOfDayString(gameState.totalHours)}</div>
     `;
 
     fellowshipDisplay.innerHTML = gameState.fellowship.map(m => {
@@ -557,7 +620,7 @@ function showTravelView() {
     `;
     
     document.getElementById('camp-button').addEventListener('click', () => showCampView(false));
-    document.getElementById('map-button').addEventListener('click', showMapView);
+    document.getElementById('map-button').addEventListener('click', () => showMapView(showTravelView));
     
     const travelButton = document.getElementById('travel-button');
     if (gameState.mode === 'traveling') {
@@ -578,7 +641,7 @@ function updateTravelAnimation() {
     const path = Array(12).fill('⋅');
     if (gameState.mode === 'traveling') {
         animationFrame = (animationFrame + 1) % 12;
-        path[animationFrame] = '🚶';
+        path[animationFrame] = '🚶‍♂️‍➡️';
     } else {
         path[0] = '🏕️';
     }
@@ -622,15 +685,17 @@ function showCampView(isForcedNight) {
         </div>
         <div id="camp-results" class="text-center my-4 text-lg text-emerald-300 min-h-[2rem]"></div>
         <div class="mt-auto grid grid-cols-2 sm:grid-cols-3 gap-4 pt-6">
-            <button id="break-camp-btn" class="game-button bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform hover:scale-105 col-span-full sm:col-span-1">Continue</button>
-            <button id="extended-rest-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Extended Rest (24h)</button>
-            <button id="forage-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Forage (6h)</button>
-            <button id="hunt-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Hunt (4h)</button>
-            <button id="scavenge-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Scavenge (8h)</button>
+            <button id="break-camp-btn" class="game-button bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform hover:scale-105">Continue</button>
+            <button id="map-btn" class="game-button bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform hover:scale-105">View Map</button>
+            <button id="extended-rest-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Extended Rest</button>
+            <button id="forage-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Forage</button>
+            <button id="hunt-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Hunt</button>
+            <button id="scavenge-btn" class="game-button bg-amber-800 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-lg">Scavenge</button>
         </div>
     `;
 
     document.getElementById('break-camp-btn').addEventListener('click', startGameLoop);
+    document.getElementById('map-btn').addEventListener('click', () => showMapView(() => showCampView(false)));
     document.getElementById('extended-rest-btn').addEventListener('click', campActions.extendedRest);
     document.getElementById('forage-btn').addEventListener('click', campActions.forage);
     document.getElementById('hunt-btn').addEventListener('click', campActions.hunt);
@@ -700,7 +765,7 @@ function showLandmarkView(landmark) {
     document.getElementById('continue-journey-btn').addEventListener('click', startGameLoop);
 }
 
-function showMapView() {
+function showMapView(returnAction) {
     stopGameLoop();
     mainView.innerHTML = `
         <h3 class="font-title text-3xl text-sky-300 mb-4 text-center">Map of Middle-earth</h3>
@@ -708,15 +773,21 @@ function showMapView() {
             <svg id="large-map-svg" viewBox="0 0 1000 800"></svg>
         </div>
         <div class="mt-auto pt-6">
-            <button id="return-journey-btn" class="w-full game-button bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform hover:scale-105">Return to Journey</button>
+            <button id="return-journey-btn" class="w-full game-button bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-transform hover:scale-105">Return</button>
         </div>
     `;
-    document.getElementById('return-journey-btn').addEventListener('click', showTravelView);
+    document.getElementById('return-journey-btn').addEventListener('click', returnAction || showTravelView);
     drawMap(document.getElementById('large-map-svg'));
 }
 
 function displayEvent(event) {
-    const eventChoices = event.choices.map(choice => ({
+    let choices = event.choices;
+    // If choices is a function, call it to get the dynamic choices
+    if (typeof choices === 'function') {
+        choices = choices();
+    }
+
+    const eventChoices = choices.map(choice => ({
         ...choice,
         action: () => {
             const resultText = choice.action();
@@ -758,7 +829,7 @@ const campActions = {
         advanceTime(6);
         const f = Math.floor(Math.random() * 5) + 8;
         gameState.food += f;
-        document.getElementById('camp-results').innerHTML = `<p class='text-emerald-300'>You spent 6 hours foraging and found ${f} food.</p>`;
+        document.getElementById('camp-results').innerHTML = `<p class='text-emerald-300'>You spend much of the morning foraging and find ${f} food.</p>`;
         updateUI();
     },
     hunt: () => {
@@ -767,13 +838,13 @@ const campActions = {
         let resultText = '';
         if (roll < 0.25) {
             gameState.fellowship.forEach(m => m.health -= 15);
-            resultText = `<p class='text-rose-400'>The hunt went poorly! The party was injured and found nothing.</p>`;
+            resultText = `<p class='text-rose-400'>The hunt goes poorly! The party was injured and found nothing after a few hours.</p>`;
         } else if (roll < 0.75) {
-            resultText = `<p class='text-amber-400'>You hunted for 4 hours but found nothing.</p>`;
+            resultText = `<p class='text-amber-400'>You hunted for several hours but found nothing.</p>`;
         } else {
             const f = Math.floor(Math.random() * 20) + 20;
             gameState.food += f;
-            resultText = `<p class='text-emerald-300'>A successful hunt! You brought back ${f} food.</p>`;
+            resultText = `<p class='text-emerald-300'>A successful hunt! You brought back ${f} food after a few hours.</p>`;
         }
         document.getElementById('camp-results').innerHTML = resultText;
         updateUI();
@@ -788,9 +859,9 @@ const campActions = {
         } else if (roll < 0.6) {
             const s = Math.floor(Math.random() * 10) + 5;
             gameState.supplies += s;
-            resultText = `<p class='text-emerald-300'>You found ${s} useful supplies!</p>`;
+            resultText = `<p class='text-emerald-300'>After a long day of scavenging, you found ${s} useful supplies!</p>`;
         } else {
-            resultText = `<p class='text-amber-400'>You scavenged for 8 hours but found nothing of note.</p>`;
+            resultText = `<p class='text-amber-400'>You scavenged for most of the day but found nothing of note.</p>`;
         }
         document.getElementById('camp-results').innerHTML = resultText;
         updateUI();
