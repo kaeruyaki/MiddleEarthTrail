@@ -143,8 +143,8 @@ const ICONS = {
 // --- GAME CONSTANTS ---
 const HOURS_PER_SECOND = 2; 
 const HOURLY_FOOD_CONSUMPTION = 0.25;
-const HOURLY_DISTANCE_TRAVEL = 1;
-const DAILY_HEALTH_LOSS = 3;
+const HOURLY_DISTANCE_TRAVEL = 5;
+const DAILY_HEALTH_LOSS = 5;
 
 // --- GAME STATE ---
 let gameState = {};
@@ -167,7 +167,7 @@ const professions = {
 
 const journeyData = {
     'shire': { name: "The Shire", x: 180, y: 350, distance: 0, legName: "The Road to Bree", next: 'bree', locationType: 'wild' },
-    'bree': { name: "Bree", x: 280, y: 360, distance: 100, legName: "To Weathertop", next: 'weathertop', type: 'town', description: "You arrive in the bustling town of Bree and find lodging at the Prancing Pony. The common room is filled with folk of all sorts, and a mysterious, hooded man watches you from a dark corner.", locationType: 'town' },
+    'bree': { name: "Bree", x: 280, y: 360, distance: 100, legName: "To Weathertop", next: 'weathertop', type: 'town', description: "You arrive in the bustling town of Bree and find lodging at the Prancing Pony. The common room is filled with folk of all sorts. Maybe it's time for a quick meal and a room for the night.", locationType: 'town' },
     'weathertop': { name: "Weathertop", x: 320, y: 358, distance: 150, legName: "The Road to the Trollshaws", next: 'trollshaws', locationType: 'wild' },
     'trollshaws': { name: "Trollshaws", x: 350, y: 355, distance: 175, legName: "The Road to Rivendell", next: 'rivendell', locationType: 'wild' },
     'rivendell': { name: "Rivendell", x: 400, y: 350, distance: 250, next: 'caradhras_pass', type: 'town', description: "You have come to the Last Homely House East of the Sea. The air is filled with peace and ancient wisdom. Elrond greets you, his eyes holding the light of stars.", locationType: 'town' },
@@ -185,14 +185,14 @@ const journeyData = {
 
 const townActions = {
     'bree': [
-        { id: 'bree_gossip', text: "Listen for Rumors", action: (dialogueEl) => { advanceTime(1); dialogueEl.innerHTML = `You spend some time listening to chatter and hear tales of black riders on the road and troubles from the south. The mood is grim.`; } },
-        { id: 'bree_trade', text: "Trade for Supplies", condition: () => gameState.gold >= 15, action: (dialogueEl) => { advanceTime(1); gameState.gold -= 15; gameState.supplies += 25; dialogueEl.innerHTML = `The trade takes a short while. You get 25 supplies for 15 gold.`; } },
-        { id: 'bree_meet_strider', text: "Speak to the hooded man", oneTime: true, action: (dialogueEl) => { advanceTime(0.5); meetStrider(); dialogueEl.innerHTML = `You speak briefly with the ranger. His name is Strider. He knows of your quest and offers to guide you.`; } },
-        { id: 'bree_leave', text: "Leave Bree", isLeaveAction: true, action: () => { if (!gameState.fellowship.some(m => m.name === 'Strider')) { meetStrider(); } gameState.currentLocationKey = 'weathertop'; gameState.pathTaken.push('weathertop'); showTravelView(); } }
+        { id: 'bree_gossip', text: "Listen for Rumors", action: (dialogueEl) => { advanceTime(1); dialogueEl.innerHTML = `You spend some time listening to chatter and hear tales of black riders on the road and troubles from the south.`; } },
+        { id: 'bree_trade', text: "Trade Supplies", condition: () => gameState.gold >= 15, action: (dialogueEl) => { advanceTime(1); gameState.gold -= 15; gameState.supplies += 25; dialogueEl.innerHTML = `The trade takes a short while. You get 25 supplies for 15 gold.`; } },
+        { id: 'bree_eat_dinner', text: "Eat Dinner", oneTime: true, action: (dialogueEl) => { advanceTime(2); gameState.flags.metStrider = true; dialogueEl.innerHTML = `You take a table in the common room. As you eat and drink, you notice a hooded man in the corner, watching you intently. As the night gets on, your spirits are filled, and the hobbits begin to dance and sing...`; meetStrider(); } },
+        { id: 'bree_sleep', text: "Turn In for the Night", isLeaveAction: true, action: () => { displayEvent(encounters['ringwraith_inn_attack']); } }
     ],
     'rivendell': [
         { id: 'rivendell_rest', text: "Rest", action: (dialogueEl) => { advanceTime(8); gameState.fellowship.forEach(m => m.health = Math.min(100, m.health + 25)); gameState.morale = 100; dialogueEl.innerHTML = `You rest deeply through the night and into the next day in the Last Homely House. Your health and spirits are fully restored.`; } },
-        { id: 'rivendell_council', text: "Attend the Council of Elrond", oneTime: true, action: (dialogueEl) => { advanceTime(4); storyTriggers.rivendell(gameState); dialogueEl.innerHTML = `The council lasts for many hours. Elrond declares that the Ring must be destroyed in the fires of Mount Doom. The Fellowship of the Ring is formed to aid the Ringbearer! Legolas, Gimli, Boromir, and Gandalf join your cause.`; } },
+        { id: 'rivendell_council', text: "Attend the Council of Elrond", oneTime: true, action: (dialogueEl) => { advanceTime(4); storyTriggers.rivendell(gameState); dialogueEl.innerHTML = `"The Ring cannot stay here," says Elrond. "It must be destroyed in the fires of Mount Doom." After a long debate, the Fellowship of the Ring is formed. Legolas, Gimli, Boromir, and Gandalf join your cause.`; } },
         { id: 'rivendell_leave', text: "Leave Rivendell", isLeaveAction: true, condition: () => gameState.flags.councilOfElrondComplete, action: () => { gameState.currentLocationKey = 'caradhras_pass'; gameState.pathTaken.push('caradhras_pass'); showTravelView(); } }
     ]
 };
@@ -224,7 +224,7 @@ const encounters = {
                     return `Against all odds, you endure the storm's wrath! The pass is behind you, and the golden wood of Lothlórien lies ahead. The ordeal has left you battered but resolute.`;
                 } else {
                     gameState.currentLocationKey = 'moria';
-                    gameState.pathTaken.pop();
+                    gameState.pathTaken.pop(); // Remove caradhras_pass
                     gameState.pathTaken.push('moria');
                     return `You fight against the blizzard for hours, but the cruel magic of the mountain is too strong. Beaten and frostbitten, you are forced to turn back. There is another way... through the darkness of Moria.`;
                 }
@@ -265,6 +265,45 @@ const encounters = {
                 return "The Fellowship is broken. Only Frodo and Sam remain to continue the quest into the lands of Mordor.";
             }}
         ]
+    },
+    'ringwraith_inn_attack': {
+        name: "Night Terrors",
+        description: "You retire to your room.",
+        type: 'story',
+        trigger: 'town_action',
+        choices: function() {
+            if (gameState.flags.metStrider) {
+                // SAFE SCENARIO: Strider saves you
+                return [
+                    { text: "Follow Strider", action: () => {
+                        advanceTime(8);
+                        gameState.morale -= 10;
+                        gameState.currentLocationKey = 'weathertop';
+                        gameState.pathTaken.push('weathertop');
+                        return `Strider leads you away to safety in the dead of night. Soon after, you hear shrieks and the sound of splintering wood coming from the Inn. The Black Riders have come to Bree, but thanks to Strider you are safe... You flee Bree at first light, and Strider joins your party.`;
+                    }}
+                ];
+            } else {
+                // DANGEROUS SCENARIO: Strider has not been met
+                return [
+                    { text: "Go to Bed", action: () => {
+                        advanceTime(8);
+                        if (Math.random() < 0.5) { // 50% chance of game over
+                            checkGameOver("In the dead of night, you hear the screetch of the Black Riders as they enter your room armed with swords. Frodo has been killed and The Ring was taken by the Nazgûl.");
+                            return null; // Return null to signify game over
+                        } else {
+                            gameState.fellowship.find(m => m.name === 'Frodo').health -= 30;
+                            gameState.morale -= 25;
+                            meetStrider(); // Strider saves you and joins
+                            gameState.flags.metStrider = true;
+                            gameState.currentLocationKey = 'weathertop';
+                            gameState.pathTaken.push('weathertop');
+                            return `Just as the Black Riders burst in, a hooded man leaps to your defense, brandishing a sword and torch! 'Follow me!' he yells, leading you out a back window. You escape into the night, but Frodo is wounded and your nerves are shattered.`;
+                        }
+                    }}
+                ];
+            }
+        }
     },
     // --- RANDOM ENCOUNTERS ---
     'fruit-trees': {
@@ -416,13 +455,10 @@ function getTimeOfDayString(hour) {
 function meetStrider() {
     if (!gameState.fellowship.some(m => m.name === 'Strider' || m.name === 'Aragorn')) {
         gameState.fellowship.push({ name: 'Strider', race: 'Man', health: 100 });
-        displayEvent({
-            name: "A Ranger in the Corner",
-            description: "The mysterious ranger approaches your table. 'I am called Strider,' he says. 'I know of the burden you carry, and the road ahead is dangerous. You will need my help.' His eyes are keen and he seems trustworthy, despite his rough appearance.",
-            choices: [
-                { text: "Accept his offer", action: () => `Strider has joined your party. His knowledge of the wild will be invaluable.` }
-            ]
-        });
+        const dialogueEl = document.getElementById('town-dialogue');
+        if (dialogueEl) {
+            dialogueEl.innerHTML += `<br><br>As the Hobbits are marrymaking with the locals, you accidentally slip The Ring onto your finger, disappearing from sight. The tavern is spooked, and the man in the corner now approaches your table. 'I am called Strider,' he says. 'I know the reason for your journey. And I know the Enemy you are fleeing from. You are in danger here, let me help you.'`;
+        }
     }
 }
 
@@ -494,6 +530,7 @@ function setupNewGame(profession, startKey = 'shire', debugOptions = {}) {
         flags: { 
             gollumFollowing: false, 
             councilOfElrondComplete: false,
+            metStrider: false,
             isQuickTravel: debugOptions.isQuickTravel || false,
             isStoryOnly: debugOptions.isStoryOnly || false,
         },
@@ -547,6 +584,9 @@ function gameLoop() {
     if (timeOfDay >= 23) {
         stopGameLoop();
         showCampView(true);
+        if (gameState.autocampEnabled) {
+            setTimeout(startGameLoop, 1500);
+        }
         return;
     }
     
@@ -600,16 +640,17 @@ function gameLoop() {
     advanceTime(1);
 }
 
-function checkGameOver() {
+function checkGameOver(reason = null) {
     if (gameState.isGameOver) return;
-    const frodo = gameState.fellowship.find(m => m.name === 'Frodo');
-    const livingMembers = gameState.fellowship.filter(m => m.health > 0).length;
-
-    let reason = "";
-    if (frodo && frodo.health <= 0) reason = "the Ringbearer has fallen.";
-    else if (livingMembers === 0) reason = "the entire Fellowship has been lost.";
-    else if (gameState.food <= 0) reason = "you have run out of food.";
-    else if (gameState.morale <= 0) reason = "the fellowship's morale has broken.";
+    
+    if (!reason) {
+        const frodo = gameState.fellowship.find(m => m.name === 'Frodo');
+        const livingMembers = gameState.fellowship.filter(m => m.health > 0).length;
+        if (frodo && frodo.health <= 0) reason = "the Ringbearer has fallen.";
+        else if (livingMembers === 0) reason = "the entire Fellowship has been lost.";
+        else if (gameState.food <= 0) reason = "you have run out of food.";
+        else if (gameState.morale <= 0) reason = "the fellowship's morale has broken.";
+    }
 
     if (reason) {
         gameState.isGameOver = true;
@@ -758,8 +799,7 @@ function showCampView(isForcedNight) {
 function showTownView(locationKey) {
     stopGameLoop();
     const townData = journeyData[locationKey];
-    const actions = townActions[locationKey];
-
+    
     mainView.innerHTML = `
         <div class="text-center mb-6">
             <h3 class="font-title text-4xl text-amber-300 mb-2">Welcome to ${townData.name}</h3>
@@ -770,9 +810,14 @@ function showTownView(locationKey) {
             <!-- Town actions go here -->
         </div>
     `;
+    renderTownActions(locationKey);
+}
 
+function renderTownActions(locationKey) {
+    const actions = townActions[locationKey];
     const dialogueEl = document.getElementById('town-dialogue');
     const actionsContainer = document.getElementById('town-actions-container');
+    actionsContainer.innerHTML = ''; // Clear old buttons
 
     actions.forEach(action => {
         const isCompleted = action.oneTime && gameState.completedTownActions.has(action.id);
@@ -794,7 +839,7 @@ function showTownView(locationKey) {
                     }
                     action.action(dialogueEl);
                     if (!action.isLeaveAction) {
-                        showTownView(locationKey); // Refresh view after action
+                        renderTownActions(locationKey); // Re-render only the buttons
                     }
                     updateUI();
                 };
@@ -844,6 +889,7 @@ function displayEvent(event) {
         ...choice,
         action: () => {
             const resultText = choice.action();
+            if (gameState.isGameOver) return; // Stop if the action ended the game
             showEncounterView(event.name, resultText, [{ text: "Continue", action: () => showTravelView() }]);
             updateUI();
         }
