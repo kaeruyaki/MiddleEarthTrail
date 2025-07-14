@@ -1,0 +1,63 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #18181b; /* Zinc 900 */
+    color: #d4d4d8; /* Zinc 300 */
+}
+.font-title {
+    font-family: 'IM Fell English SC', serif;
+}
+/* Custom scrollbar for a more thematic feel */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #27272a; /* Zinc 800 */
+}
+::-webkit-scrollbar-thumb {
+    background: #52525b; /* Zinc 600 */
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #71717a; /* Zinc 500 */
+}
+/* Styling for disabled buttons */
+.game-button:disabled {
+    background-color: #3f3f46; /* Zinc 700 */
+    color: #a1a1aa; /* Zinc 400 */
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+.map-landmark-label {
+     font-size: 14px;
+     fill: #fde68a; /* Amber 200 */
+     text-anchor: middle;
+     pointer-events: none;
+     font-weight: 600;
+     paint-order: stroke;
+     stroke: #18181b; /* Zinc 900 */
+     stroke-width: 2px;
+     stroke-linecap: butt;
+     stroke-linejoin: miter;
+}
+.map-feature {
+    fill: none;
+    stroke: #52525b; /* Zinc 600 */
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.5;
+}
+/* Screen flash animations */
+@keyframes flashWhite {
+    50% { background-color: rgba(255, 255, 255, 0.3); }
+}
+@keyframes flashRed {
+    50% { background-color: rgba(220, 38, 38, 0.3); }
+}
+.flash-white {
+    animation: flashWhite 0.4s ease-in-out;
+}
+.flash-red {
+    animation: flashRed 0.4s ease-in-out;
+}
