@@ -125,12 +125,14 @@ function gameLoop() {
         
         const landmarkData = journeyData[nextLocKey];
 
-        if (nextLocKey === 'rivendell') {
+        // BUG FIX: Check for a story encounter at the new location
+        const storyEncounter = encounters[nextLocKey];
+        if (storyEncounter && storyEncounter.trigger === 'landmark_arrival') {
+            displayEvent(storyEncounter);
+        } else if (nextLocKey === 'rivendell') {
             handleRivendellArrival();
         } else if (landmarkData.type === 'town') {
             showTownView(nextLocKey);
-        } else if (encounters[nextLocKey]) {
-            displayEvent(encounters[nextLocKey]);
         } else {
             showLandmarkView(landmarkData);
         }

@@ -1,20 +1,12 @@
 // js/ui.js
 
 // This module is responsible for all direct manipulation of the HTML document (the DOM).
-// It handles rendering all game views, updating status displays, and managing user interactions
-// on the UI elements. It imports data and state, but does not modify the state itself.
+// It now uses custom events to communicate with the main game logic,
+// which prevents circular dependency errors.
 
 import { ICONS, journeyData, townActions } from './gameData.js';
 import { encounters } from './encounters.js';
 import { gameState } from './gameState.js';
-
-// This is a placeholder for the functions that will be in other modules.
-// We'll import them properly in the main.js file and pass them where needed.
-// This avoids circular dependency issues.
-let gameLogicDependencies = {};
-export function setGameLogicDependencies(deps) {
-    gameLogicDependencies = deps;
-}
 
 // --- DOM Element References ---
 const startScreen = document.getElementById('start-screen');
@@ -28,11 +20,6 @@ let animationFrame = 0;
 
 // --- UI HELPER FUNCTIONS ---
 
-/**
- * Gets a descriptive string and color for a character's health value.
- * @param {number} health - The character's health (0-100).
- * @returns {{text: string, colorClass: string}}
- */
 function getHealthStatus(health) {
     const h = Math.max(0, health);
     if (h === 0) return { text: 'Dead', colorClass: 'text-red-500' };
@@ -44,11 +31,6 @@ function getHealthStatus(health) {
     return { text: 'Great', colorClass: 'text-green-300' };
 }
 
-/**
- * Gets a descriptive string for the time of day based on the hour.
- * @param {number} hour - The current hour of the day (0-23).
- * @returns {string} The name of the time of day.
- */
 function getTimeOfDayString(hour) {
     const h = Math.floor(hour % 24);
     if (h >= 23 || h < 4) return 'Midnight';
@@ -62,10 +44,6 @@ function getTimeOfDayString(hour) {
     return 'Night';
 }
 
-/**
- * Triggers a brief screen flash animation for emphasis during encounters.
- * @param {string} color - 'white' or 'red'.
- */
 export function triggerEncounterFlash(color = 'white') {
     const className = color === 'red' ? 'flash-red' : 'flash-white';
     mainColumn.classList.add(className);
@@ -77,10 +55,6 @@ export function triggerEncounterFlash(color = 'white') {
 
 // --- CORE UI UPDATE FUNCTIONS ---
 
-/**
- * Updates the main status panels with the latest data from the gameState.
- * This function is called frequently to keep the UI in sync with the state.
- */
 export function updateUI() {
     if (!gameState || Object.keys(gameState).length === 0) return;
     const day = Math.floor((gameState.totalHours - 11 + 24) / 24);
@@ -106,12 +80,10 @@ export function updateUI() {
     }).join('');
 }
 
-/**
- * Updates the simple travel animation in the travel view.
- */
-function updateTravelAnimation() {
+export function updateTravelAnimation() {
     const animEl = document.getElementById('travel-animation');
-    if (!animEl) return;
+    if (!animEl || !gameState || typeof gameState.totalHours === 'undefined') return;
+
     const hour = Math.floor(gameState.totalHours % 24);
     const icon = (hour >= 5 && hour < 18) ? '☀️' : '🌙';
     const path = Array(12).fill('⋅');
@@ -127,9 +99,6 @@ function updateTravelAnimation() {
 
 // --- VIEW RENDERING FUNCTIONS ---
 
-/**
- * Renders the main travel view.
- */
 export function showTravelView() {
     const currentLoc = journeyData[gameState.currentLocationKey];
     const nextLoc = journeyData[currentLoc.next];
@@ -151,26 +120,21 @@ export function showTravelView() {
         </div>
     `;
     
-    document.getElementById('camp-button').addEventListener('click', () => showCampView(false));
-    document.getElementById('map-button').addEventListener('click', () => showMapView(showTravelView));
+    document.getElementById('camp-button').addEventListener('click', () => document.dispatchEvent(new Event('showCamp')));
+    document.getElementById('map-button').addEventListener('click', () => document.dispatchEvent(new CustomEvent('showMap', { detail: { returnAction: showTravelView } })));
     
     const travelButton = document.getElementById('travel-button');
     if (gameState.mode === 'traveling') {
         travelButton.textContent = "Stop Traveling";
-        travelButton.onclick = gameLogicDependencies.stopGameLoop;
+        travelButton.onclick = () => document.dispatchEvent(new Event('stopGameLoop'));
     } else {
         travelButton.textContent = "Continue Journey";
-        travelButton.onclick = gameLogicDependencies.startGameLoop;
+        travelButton.onclick = () => document.dispatchEvent(new Event('startGameLoop'));
     }
+
     updateTravelAnimation();
 }
 
-/**
- * Renders a generic encounter view with a title, description, and choices.
- * @param {string} title - The encounter title.
- * @param {string} description - The encounter description text.
- * @param {Array} choices - An array of choice objects.
- */
 export function showEncounterView(title, description, choices) {
     gameState.mode = 'event';
     mainView.innerHTML = `
@@ -197,13 +161,7 @@ export function showEncounterView(title, description, choices) {
         if (choices.length === 1) button.classList.add('w-full', 'sm:w-1/2');
 
         button.onclick = () => {
-            // Pass all necessary functions and state to the choice's action
-            const result = choice.action({ ...gameLogicDependencies, gameState, showEncounterView, showTravelView, encounters, caradhrasFailureMessages });
-            if (result === null || gameState.isGameOver) {
-                return;
-            }
-            showEncounterView(title, result, [{ text: "Continue", action: () => { gameLogicDependencies.stopGameLoop(); showTravelView(); return null; } }]);
-            updateUI();
+            document.dispatchEvent(new CustomEvent('resolveEncounterChoice', { detail: { choice, title } }));
         };
 
         if (choice.condition && !choice.condition(gameState)) {
@@ -213,12 +171,7 @@ export function showEncounterView(title, description, choices) {
     });
 }
 
-/**
- * Renders the camp view with options for resting, foraging, etc.
- * @param {boolean} isForcedNight - True if camping is forced by nightfall.
- */
-export function showCampView(isForcedNight) {
-    gameLogicDependencies.stopGameLoop();
+export function showCampView(isForcedNight = false) {
     gameState.mode = 'camp';
     let title = isForcedNight ? "The Day's Journey is Over" : "You Make Camp";
     let description = isForcedNight ? "Darkness has fallen. You make camp and rest." : "You decide to pause your journey and set up camp to rest and recover.";
@@ -240,20 +193,15 @@ export function showCampView(isForcedNight) {
         </div>
     `;
 
-    document.getElementById('break-camp-btn').addEventListener('click', gameLogicDependencies.startGameLoop);
-    document.getElementById('map-btn').addEventListener('click', () => showMapView(() => showCampView(false)));
-    document.getElementById('extended-rest-btn').addEventListener('click', gameLogicDependencies.campActions.extendedRest);
-    document.getElementById('forage-btn').addEventListener('click', gameLogicDependencies.campActions.forage);
-    document.getElementById('hunt-btn').addEventListener('click', gameLogicDependencies.campActions.hunt);
-    document.getElementById('scavenge-btn').addEventListener('click', gameLogicDependencies.campActions.scavenge);
+    document.getElementById('break-camp-btn').addEventListener('click', () => document.dispatchEvent(new Event('startGameLoop')));
+    document.getElementById('map-btn').addEventListener('click', () => document.dispatchEvent(new CustomEvent('showMap', { detail: { returnAction: showCampView } })));
+    document.getElementById('extended-rest-btn').addEventListener('click', () => document.dispatchEvent(new Event('campActionExtendedRest')));
+    document.getElementById('forage-btn').addEventListener('click', () => document.dispatchEvent(new Event('campActionForage')));
+    document.getElementById('hunt-btn').addEventListener('click', () => document.dispatchEvent(new Event('campActionHunt')));
+    document.getElementById('scavenge-btn').addEventListener('click', () => document.dispatchEvent(new Event('campActionScavenge')));
 }
 
-/**
- * Renders the view for a town, including its specific actions.
- * @param {string} locationKey - The key for the town in journeyData.
- */
 export function showTownView(locationKey) {
-    gameLogicDependencies.stopGameLoop();
     gameState.mode = 'town';
     const townData = journeyData[locationKey];
     
@@ -268,13 +216,8 @@ export function showTownView(locationKey) {
     renderTownActions(locationKey);
 }
 
-/**
- * Renders the action buttons for the current town view.
- * @param {string} locationKey - The key for the town.
- */
 export function renderTownActions(locationKey) {
     const actions = townActions[locationKey];
-    const dialogueEl = document.getElementById('town-dialogue');
     const actionsContainer = document.getElementById('town-actions-container');
     actionsContainer.innerHTML = ''; 
 
@@ -294,16 +237,7 @@ export function renderTownActions(locationKey) {
                 button.disabled = true;
             } else {
                 button.onclick = () => {
-                    if (action.oneTime) {
-                        gameState.completedTownActions.add(action.id);
-                    }
-                    // This is complex: the action function from gameData needs access to many other functions.
-                    // We pass them all in a single dependency object.
-                    action.action(dialogueEl, gameLogicDependencies.advanceTime, gameState, gameLogicDependencies.meetStrider, showEncounterView, gameLogicDependencies.stopGameLoop, showTravelView, gameLogicDependencies.checkGameOver, updateUI, gameLogicDependencies.storyTriggers, renderTownActions);
-                    if (!action.isLeaveAction) {
-                        renderTownActions(locationKey);
-                    }
-                    updateUI();
+                    document.dispatchEvent(new CustomEvent('resolveTownAction', { detail: { action, locationKey } }));
                 };
             }
             actionsContainer.appendChild(button);
@@ -311,12 +245,7 @@ export function renderTownActions(locationKey) {
     });
 }
 
-/**
- * Renders a simple view for arriving at a non-event landmark.
- * @param {object} landmark - The landmark data object from journeyData.
- */
 export function showLandmarkView(landmark) {
-    gameLogicDependencies.stopGameLoop();
     mainView.innerHTML = `
         <div class="text-center my-auto">
              <h3 class="font-title text-4xl text-amber-300 mb-2">Arrived: ${landmark.name}</h3>
@@ -326,15 +255,10 @@ export function showLandmarkView(landmark) {
             <button id="continue-journey-btn" class="w-full game-button bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg">Continue the Journey</button>
         </div>
     `;
-    document.getElementById('continue-journey-btn').addEventListener('click', gameLogicDependencies.startGameLoop);
+    document.getElementById('continue-journey-btn').addEventListener('click', () => document.dispatchEvent(new Event('startGameLoop')));
 }
 
-/**
- * Renders the full-screen map view.
- * @param {function} returnAction - The function to call when the return button is clicked.
- */
 export function showMapView(returnAction) {
-    gameLogicDependencies.stopGameLoop();
     mainView.innerHTML = `
         <h3 class="font-title text-3xl text-sky-300 mb-4 text-center">Map of Middle-earth</h3>
         <div class="flex-grow bg-zinc-900/50 rounded-lg border border-zinc-700 p-2">
@@ -348,30 +272,16 @@ export function showMapView(returnAction) {
     drawMap(document.getElementById('large-map-svg'));
 }
 
-/**
- * A wrapper to display a specific encounter by its key.
- * @param {object} event - The encounter object from the encounters data.
- */
 export function displayEvent(event) {
     let choices = event.choices;
     if (typeof choices === 'function') {
-        // If choices is a function, call it with dependencies to get the dynamic choices
-        choices = choices({gameState, journeyData, ...gameLogicDependencies});
+        choices = choices(gameState);
     }
     showEncounterView(event.name, event.description, choices);
 }
 
-
-// --- MAP DRAWING ---
-
-/**
- * Draws the SVG map based on the current gameState.
- * @param {SVGElement} svgElement - The <svg> element to draw into.
- */
 function drawMap(svgElement) {
     svgElement.innerHTML = ''; 
-    
-    // Landmass & Features
     const features = {
         coast: 'M130,340 C100,450 150,550 280,600 L350,700 L500,750 L650,720 L750,680 L800,600 L850,500 L820,400 C800,300 700,250 600,250 C500,250 400,200 300,180 C200,150 150,250 130,340 Z',
         misty_mountains: 'M400,100 C420,200 440,300 450,400 C460,500 480,600 500,700',
@@ -380,18 +290,13 @@ function drawMap(svgElement) {
         mirkwood: 'M500,200 C520,250 530,350 500,450',
         fangorn: 'M550,580 C530,620 550,660 580,680'
     };
-    
     for (const key in features) {
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', features[key]);
         path.setAttribute('class', 'map-feature');
-        if (key === 'coast') {
-            path.classList.add('fill-stone-800/50');
-        }
+        if (key === 'coast') path.classList.add('fill-stone-800/50');
         svgElement.appendChild(path);
     }
-
-    // Draw the path taken by the player
     const takenRouteGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     for (let i = 0; i < gameState.pathTaken.length - 1; i++) {
         const startPoint = journeyData[gameState.pathTaken[i]];
@@ -405,19 +310,15 @@ function drawMap(svgElement) {
         takenRouteGroup.appendChild(line);
     }
     svgElement.appendChild(takenRouteGroup);
-
-    // Draw all landmarks
     const landmarksGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     for (const key in journeyData) {
         const landmark = journeyData[key];
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', landmark.x); circle.setAttribute('cy', landmark.y);
-        
         if (gameState.discoveredStops.has(key)) {
             circle.setAttribute('r', '8');
             circle.setAttribute('class', 'fill-amber-500 stroke-zinc-900 stroke-2');
             landmarksGroup.appendChild(circle);
-
             const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.setAttribute('x', landmark.x); text.setAttribute('y', landmark.y - 15);
             text.textContent = landmark.name;
@@ -430,13 +331,10 @@ function drawMap(svgElement) {
         }
     }
     svgElement.appendChild(landmarksGroup);
-
-    // Draw the current player position
     const currentLoc = journeyData[gameState.currentLocationKey];
     const nextLocKey = currentLoc.next;
     let playerX = currentLoc.x;
     let playerY = currentLoc.y;
-    
     if (nextLocKey && journeyData[nextLocKey]) {
         const nextLoc = journeyData[nextLocKey];
         const segmentDist = nextLoc.distance - currentLoc.distance;
@@ -451,7 +349,6 @@ function drawMap(svgElement) {
             }
         }
     }
-
     const playerMarker = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     playerMarker.setAttribute('cx', playerX);
     playerMarker.setAttribute('cy', playerY);
@@ -460,68 +357,58 @@ function drawMap(svgElement) {
     svgElement.appendChild(playerMarker);
 }
 
+
 // --- INITIALIZATION ---
 
-/**
- * Sets up the initial start screen, attaching event listeners.
- */
 export function initializeStartScreen() {
-    gameContainer.style.display = 'none';
-    startScreen.style.display = 'flex';
-    const beginButton = document.getElementById('begin-journey-button');
-    const professionCards = document.querySelectorAll('.profession-card');
-    let selectedProfession = null;
-    
-    const debugSelect = document.getElementById('debug-start-select');
-    debugSelect.innerHTML = ''; 
-    for (const key in journeyData) {
-        if (Object.prototype.hasOwnProperty.call(journeyData, key)) {
-            const option = document.createElement('option');
-            option.value = key;
-            option.textContent = journeyData[key].name;
-            debugSelect.appendChild(option);
-        }
-    }
+    try {
+        gameContainer.style.display = 'none';
+        startScreen.style.display = 'flex';
+        const beginButton = document.getElementById('begin-journey-button');
+        const professionCards = document.querySelectorAll('.profession-card');
+        let selectedProfession = null;
+        
+        const debugSelect = document.getElementById('debug-start-select');
+        debugSelect.innerHTML = ''; 
 
-    professionCards.forEach(card => {
-        card.addEventListener('click', () => {
-            professionCards.forEach(c => c.classList.remove('border-amber-400/50'));
-            card.classList.add('border-amber-400/50');
-            selectedProfession = card.dataset.profession;
-            beginButton.disabled = false;
+        for (const key in journeyData) {
+            if (Object.prototype.hasOwnProperty.call(journeyData, key)) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = journeyData[key].name;
+                debugSelect.appendChild(option);
+            }
+        }
+
+        professionCards.forEach(card => {
+            card.addEventListener('click', () => {
+                professionCards.forEach(c => c.classList.remove('border-amber-400/50'));
+                card.classList.add('border-amber-400/50');
+                selectedProfession = card.dataset.profession;
+                beginButton.disabled = false;
+            });
         });
-    });
 
-    beginButton.onclick = () => {
-        if(selectedProfession) {
-            const debugOptions = {
-                isQuickTravel: document.getElementById('debug-quick-travel').checked,
-                isStoryOnly: document.getElementById('debug-story-only').checked,
-            };
-            gameLogicDependencies.initializeGame(selectedProfession, debugSelect.value, debugOptions);
-        }
-    };
-}
-
-/**
- * Handles the special arrival logic for Rivendell.
- */
-export function handleRivendellArrival() {
-    const { storyTriggers, advanceTime } = gameLogicDependencies;
-    storyTriggers.rivendell(gameState);
-
-    const frodo = gameState.fellowship.find(m => m.name === 'Frodo');
-    let healingText = "";
-    if (frodo.health < 100) {
-        const daysToHeal = Math.ceil((100 - frodo.health) / 10);
-        advanceTime(daysToHeal * 24);
-        frodo.health = 100;
-        gameState.morale = 100;
-        healingText = ` For ${daysToHeal} days, Frodo lies in a deep sleep while Elrond's skill battles the shadow of the Morgul-blade. At last, he wakes, weak but whole again. The company's morale is fully restored in this safe haven.`;
+        beginButton.onclick = () => {
+            if(selectedProfession) {
+                const event = new CustomEvent('initializeGame', {
+                    detail: {
+                        profession: selectedProfession,
+                        startKey: debugSelect.value,
+                        debugOptions: {
+                            isQuickTravel: document.getElementById('debug-quick-travel').checked,
+                            isStoryOnly: document.getElementById('debug-story-only').checked,
+                        }
+                    }
+                });
+                document.dispatchEvent(event);
+            }
+        };
+    } catch (error) {
+        console.error("Error during initializeStartScreen:", error);
     }
-    gameState.flags.rivendellPhase = 1;
-    showEncounterView("Welcome to Rivendell", journeyData.rivendell.description + healingText, [{ text: "Continue", action: () => { showTownView('rivendell'); return null; } }]);
 }
 
-// Set up a recurring timer for the travel animation
-setInterval(updateTravelAnimation, 500);
+export function handleRivendellArrival() {
+    document.dispatchEvent(new Event('handleRivendellArrival'));
+}

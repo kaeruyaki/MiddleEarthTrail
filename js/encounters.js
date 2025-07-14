@@ -4,6 +4,8 @@
 // Separating this makes it easier to add new encounters or balance existing ones
 // without touching the core game logic.
 
+import { journeyData } from './gameData.js';
+
 /**
  * A list of flavorful failure messages for the Caradhras Pass encounter.
  */
@@ -17,15 +19,6 @@ export const caradhrasFailureMessages = [
 /**
  * The main encounter database.
  * Each key is a unique encounter ID.
- * - name: The title of the encounter.
- * - description: The text presented to the player.
- * - type: 'story', 'friendly', 'hostile', 'neutral'.
- * - trigger: 'landmark_arrival' or 'travel'.
- * - weight: A number indicating how common a random encounter is. Higher is more common.
- * - condition: An optional function that checks gameState to see if the encounter can occur.
- * - choices: An array of options for the player. Each choice has text and an action function.
- * Note: The action functions will be called by the game loop, which will supply the necessary
- * game state and functions (like advanceTime, updateUI, etc.) as arguments.
  */
 export const encounters = {
     // --- STORY ENCOUNTERS ---
@@ -35,8 +28,8 @@ export const encounters = {
         type: 'story',
         trigger: 'landmark_arrival',
         choices: [
-            { text: "Frodo resists the urge", action: (gameState) => { const healthLost = Math.floor(Math.random() * 20) + 15; gameState.fellowship.find(m => m.name === 'Frodo').health -= healthLost; gameState.morale -= 30; return `Aragorn leaps to defend the hobbits, brandishing fire against the Wraiths. They are driven back, but not before Frodo is gravely wounded by a Morgul-blade! You must get him to Rivendell!`; } },
-            { text: "Frodo puts on the Ring", action: (gameState) => { gameState.fellowship.find(m => m.name === 'Frodo').health -= 40; gameState.morale -= 40; return `Frodo vanishes, entering the wraith-world. The Witch-king strikes with a Morgul-blade, and a shard of ice enters Frodo's shoulder. He is fading fast! You must race to Rivendell!`; } }
+            { text: "Frodo resists the urge", action: ({gameState}) => { const healthLost = Math.floor(Math.random() * 20) + 15; gameState.fellowship.find(m => m.name === 'Frodo').health -= healthLost; gameState.morale -= 30; return `Aragorn leaps to defend the hobbits, brandishing fire against the Wraiths. They are driven back, but not before Frodo is gravely wounded by a Morgul-blade! You must get him to Rivendell!`; } },
+            { text: "Frodo puts on the Ring", action: ({gameState}) => { gameState.fellowship.find(m => m.name === 'Frodo').health -= 40; gameState.morale -= 40; return `Frodo vanishes, entering the wraith-world. The Witch-king strikes with a Morgul-blade, and a shard of ice enters Frodo's shoulder. He is fading fast! You must race to Rivendell!`; } }
         ]
     },
     'caradhras_pass': {
@@ -129,7 +122,7 @@ export const encounters = {
         name: "Orc Patrol", description: "A harsh guttural speech echoes from ahead. A patrol of Orcs, their scimitars cruelly sharp, march down the path. They have not yet seen you.", type: 'hostile', trigger: 'travel', weight: 7,
         choices: [
             { text: "Set an ambush", action: (deps) => { 
-                const { gameState, advanceTime, triggerEncounterFlash, updateUI } = deps;
+                const { gameState, advanceTime, triggerEncounterFlash, updateUI, performDeathRolls } = deps;
                 advanceTime(1);
                 let successChance = 0.75;
                 if (gameState.flags.frodoHasStingAndMithril) { successChance = 0.9; }
@@ -180,7 +173,8 @@ export const encounters = {
     'lost-in-wild': {
         name: "Lost in the Wild", description: "The landscape has become a monotonous, rolling terrain. The path is gone. You are lost.", type: "neutral", trigger: "travel", weight: 10,
         choices: [
-            { text: "Trust the Ranger", condition: (gameState) => gameState.fellowship.some(m => m.name === 'Aragorn' && m.health > 0), action: ({advanceTime}) => { advanceTime(3); return `<span class="text-positive">Aragorn's skill guides you true after a few hours of searching.</span> You find the main path again.`; } },
+            // BUG FIX: Condition now checks for "Strider" OR "Aragorn"
+            { text: "Trust the Ranger", condition: (gameState) => gameState.fellowship.some(m => (m.name === 'Aragorn' || m.name === 'Strider') && m.health > 0), action: ({advanceTime}) => { advanceTime(3); return `<span class="text-positive">Aragorn's skill guides you true after a few hours of searching.</span> You find the main path again.`; } },
             { text: "Climb for a view", action: ({advanceTime, gameState, updateUI}) => { advanceTime(2); if (Math.random() < 0.6) { return `<span class="text-positive">After a short climb, you spot the correct path from a high vantage.</span>`; } else { const m = gameState.fellowship.find(m => m.health > 0); m.health -= 10; updateUI(); return `<span class="text-negative">${m.name} slips and falls while climbing.</span> The path remains hidden.`; } } },
             { text: "Press on blindly", action: ({advanceTime, gameState}) => { advanceTime(4); gameState.morale -= 10; return `<span class="text-neutral">You wander for hours, your spirits sinking, before finally stumbling back onto the path.</span>`; } }
         ]
@@ -232,7 +226,8 @@ export const encounters = {
     },
     'athelas': {
         name: "Athelas (Kingsfoil)", description: "Aragorn kneels, his keen eyes spotting a patch of a seemingly plain weed. 'This is Athelas,' he murmurs. 'Kingsfoil.'", type: 'friendly', trigger: 'travel', weight: 2,
-        condition: (gameState) => gameState.fellowship.some(m => m.name === 'Aragorn' && m.health > 0),
+        // BUG FIX: Condition now checks for "Strider" OR "Aragorn"
+        condition: (gameState) => gameState.fellowship.some(m => (m.name === 'Aragorn' || m.name === 'Strider') && m.health > 0),
         choices: [
             { text: "Gather it", action: ({advanceTime, gameState}) => { advanceTime(1); gameState.inventory.athelas = (gameState.inventory.athelas || 0) + 1; return `You spend some time carefully gathering the precious herb, adding one use of Athelas to your inventory.`; } },
             { text: "Move on", action: () => `You leave the precious herb behind.` }
@@ -269,7 +264,7 @@ export const encounters = {
         weight: 3,
         condition: (gameState) => gameState.distanceTraveled < journeyData.rivendell.distance,
         choices: function(dependencies) {
-            const { gameState, advanceTime, journeyData } = dependencies;
+            const { gameState, advanceTime } = dependencies;
             const locationType = journeyData[gameState.currentLocationKey].locationType;
             if (locationType === 'town') {
                 return [
@@ -281,7 +276,8 @@ export const encounters = {
                 return [
                     { text: "Run for a river crossing", action: () => { advanceTime(2); gameState.distanceTraveled += 5; return `You race for a nearby river, hoping the water will deter the wraith. The desperate flight takes its toll.`; } },
                     { text: "Hide in the grass", action: () => { advanceTime(3); if (Math.random() < 0.5) { gameState.morale -= 20; return `The Rider passes so close you can hear its fell whispers. The terror is immense, but you remain unseen.`; } else { return `You lie still for what feels like an eternity. The Rider eventually moves on.`; } } },
-                    { text: "Ward with fire", condition: (gameState) => gameState.fellowship.some(m => m.name.includes('Aragorn')), action: () => { advanceTime(1); gameState.morale -= 5; return `Aragorn brandishes a torch, and the Rider recoils from the flame, giving you time to escape.`; } }
+                    // BUG FIX: Condition now checks for "Strider" OR "Aragorn"
+                    { text: "Ward with fire", condition: (gameState) => gameState.fellowship.some(m => (m.name === 'Aragorn' || m.name === 'Strider') && m.health > 0), action: () => { advanceTime(1); gameState.morale -= 5; return `Aragorn brandishes a torch, and the Rider recoils from the flame, giving you time to escape.`; } }
                 ];
             }
         }
