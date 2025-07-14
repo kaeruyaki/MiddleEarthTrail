@@ -15,7 +15,8 @@ import {
     showMapView,
     renderTownActions,
     updateTravelAnimation,
-    triggerEncounterFlash
+    triggerEncounterFlash,
+    displayEvent
 } from './ui.js';
 import { 
     startGameLoop, 
@@ -39,12 +40,27 @@ function initializeGame(profession, startKey, debugOptions) {
     
     setupNewGame(profession, startKey, debugOptions);
     
-    const startingLandmark = journeyData[startKey];
-    if (startKey === 'rivendell') {
+    const landmarkData = journeyData[startKey];
+    // FIX: Use arrivalEncounter key to find the correct story event for debug starts
+    const storyEncounterKey = landmarkData.arrivalEncounter || startKey;
+    const storyEncounter = encounters[storyEncounterKey];
+
+    // This new logic correctly handles starting at any location.
+    if (storyEncounter && storyEncounter.trigger === 'landmark_arrival') {
+        displayEvent(storyEncounter);
+    } 
+    else if (startKey === 'moria') {
+        // This case is for starting *inside* moria, post-gate.
+        gameState.flags.moriaPhase = 1;
+        showTownView('moria');
+    }
+    else if (startKey === 'rivendell') {
         handleRivendellArrivalLogic();
-    } else if (startingLandmark.type === 'town') {
+    } 
+    else if (landmarkData.type === 'town') {
         showTownView(startKey);
-    } else {
+    } 
+    else {
         showTravelView();
     }
 
@@ -87,6 +103,12 @@ document.addEventListener('showCamp', () => {
     showCampView();
 });
 
+document.addEventListener('showTown', (e) => {
+    stopGameLoop();
+    showTownView(e.detail.locationKey);
+});
+
+
 document.addEventListener('showMap', (e) => {
     stopGameLoop();
     showMapView(e.detail.returnAction);
@@ -100,7 +122,19 @@ document.addEventListener('campActionScavenge', campActions.scavenge);
 document.addEventListener('handleRivendellArrival', handleRivendellArrivalLogic);
 
 document.addEventListener('resolveEncounterChoice', (e) => {
-    const { choice, title } = e.detail;
+    const { choice, title, encounter } = e.detail;
+
+    // FIX: This logic now correctly handles special puzzle encounters like the West Gate.
+    if (encounter && (encounter.onSuccess || encounter.onFailure)) {
+        if (choice.isCorrect) {
+            encounter.onSuccess({ gameState, showEncounterView, displayEvent, encounters });
+        } else {
+            encounter.onFailure({ gameState, triggerEncounterFlash, updateUI, showEncounterView, checkGameOver });
+        }
+        return; // Stop processing after handling the puzzle choice.
+    }
+
+    // Standard encounter choice resolution
     const result = choice.action({
         gameState,
         advanceTime,
@@ -111,7 +145,8 @@ document.addEventListener('resolveEncounterChoice', (e) => {
         stopGameLoop,
         showTravelView,
         storyTriggers,
-        encounters
+        encounters,
+        displayEvent
     });
 
     if (result === null || gameState.isGameOver) {
@@ -140,7 +175,9 @@ document.addEventListener('resolveTownAction', (e) => {
         stopGameLoop,
         showTravelView,
         storyTriggers,
-        renderTownActions
+        renderTownActions,
+        displayEvent,
+        encounters
     });
 
     if (!action.isLeaveAction) {

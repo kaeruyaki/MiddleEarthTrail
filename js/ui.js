@@ -135,7 +135,7 @@ export function showTravelView() {
     updateTravelAnimation();
 }
 
-export function showEncounterView(title, description, choices) {
+export function showEncounterView(title, description, choices, encounter = null) {
     gameState.mode = 'event';
     mainView.innerHTML = `
         <div class="text-center flex-grow flex flex-col justify-center">
@@ -161,7 +161,7 @@ export function showEncounterView(title, description, choices) {
         if (choices.length === 1) button.classList.add('w-full', 'sm:w-1/2');
 
         button.onclick = () => {
-            document.dispatchEvent(new CustomEvent('resolveEncounterChoice', { detail: { choice, title } }));
+            document.dispatchEvent(new CustomEvent('resolveEncounterChoice', { detail: { choice, title, encounter } }));
         };
 
         if (choice.condition && !choice.condition(gameState)) {
@@ -272,12 +272,17 @@ export function showMapView(returnAction) {
     drawMap(document.getElementById('large-map-svg'));
 }
 
+/**
+ * A wrapper to display a specific encounter by its key.
+ * @param {object} event - The encounter object from the encounters data.
+ */
 export function displayEvent(event) {
     let choices = event.choices;
     if (typeof choices === 'function') {
         choices = choices(gameState);
     }
-    showEncounterView(event.name, event.description, choices);
+    // BUG FIX: Pass the entire event object as the 4th argument so the puzzle logic can be triggered.
+    showEncounterView(event.name, event.description, choices, event);
 }
 
 function drawMap(svgElement) {

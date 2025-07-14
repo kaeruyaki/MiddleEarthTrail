@@ -29,7 +29,6 @@ let gameLoopInterval = null;
 /**
  * Checks for game-ending conditions like the Ringbearer's death, party wipe,
  * starvation, or broken morale.
- * @param {string|null} reason - An optional, specific reason for the game over.
  */
 export function checkGameOver(reason = null) {
     if (gameState.isGameOver) return;
@@ -98,7 +97,6 @@ function gameLoop() {
         return;
     };
     
-    // Check for forced camping at night
     const timeOfDay = gameState.totalHours % 24;
     if (timeOfDay >= 23) {
         stopGameLoop();
@@ -109,12 +107,10 @@ function gameLoop() {
         return;
     }
     
-    // Advance distance and apply travel weariness
     const travelMultiplier = gameState.flags.isQuickTravel ? 12 : 1;
     gameState.distanceTraveled += HOURLY_DISTANCE_TRAVEL * travelMultiplier;
     gameState.fellowship.forEach(m => { if (m.health > 0) m.health -= (DAILY_HEALTH_LOSS / 12); });
     
-    // Check for arrival at a new landmark
     const currentLocData = journeyData[gameState.currentLocationKey];
     const nextLocKey = currentLocData.next;
     if (nextLocKey && gameState.distanceTraveled >= journeyData[nextLocKey].distance) {
@@ -124,9 +120,10 @@ function gameLoop() {
         gameState.discoveredStops.add(nextLocKey);
         
         const landmarkData = journeyData[nextLocKey];
+        // FIX: Use arrivalEncounter key to find the correct story event
+        const storyEncounterKey = landmarkData.arrivalEncounter || nextLocKey;
+        const storyEncounter = encounters[storyEncounterKey];
 
-        // BUG FIX: Check for a story encounter at the new location
-        const storyEncounter = encounters[nextLocKey];
         if (storyEncounter && storyEncounter.trigger === 'landmark_arrival') {
             displayEvent(storyEncounter);
         } else if (nextLocKey === 'rivendell') {
@@ -139,13 +136,12 @@ function gameLoop() {
         return;
     }
     
-    // Check for a random encounter
     const progress = gameState.distanceTraveled / gameState.targetDistance;
     let encountersPerDay;
     if (progress < 0.5) {
-        encountersPerDay = 1 + (progress / 0.5) * 2; // Ramps from 1 to 3
+        encountersPerDay = 1 + (progress / 0.5) * 2;
     } else {
-        encountersPerDay = 3 - ((progress - 0.5) / 0.5); // Ramps from 3 down to 2
+        encountersPerDay = 3 - ((progress - 0.5) / 0.5);
     }
     const hourlyEncounterChance = encountersPerDay / 12;
     
@@ -165,16 +161,12 @@ function gameLoop() {
         }
     }
     
-    // Advance time by one hour if no events occurred
     advanceTime(1);
 }
 
 
 // --- GAME LOOP CONTROLLERS ---
 
-/**
- * Starts the main game loop interval.
- */
 export function startGameLoop() {
     if (gameState.isGameOver || gameState.mode === 'traveling') return;
     
@@ -192,9 +184,6 @@ export function startGameLoop() {
     gameLoopInterval = setInterval(gameLoop, 1000 / HOURS_PER_SECOND);
 }
 
-/**
- * Stops the main game loop interval.
- */
 export function stopGameLoop() {
     clearInterval(gameLoopInterval);
     if(gameState.mode === 'traveling') {
@@ -206,9 +195,6 @@ export function stopGameLoop() {
 
 // --- CAMP ACTIONS ---
 
-/**
- * A collection of actions that can be performed while camping.
- */
 export const campActions = {
     forage: () => {
         advanceTime(6);
@@ -241,7 +227,7 @@ export const campActions = {
         if (roll < 0.2) {
             stopGameLoop();
             displayEvent(encounters['orc-patrol']);
-            return; // Exit here to prevent updating a non-existent element
+            return;
         } else if (roll < 0.6) {
             const s = Math.floor(Math.random() * 10) + 5;
             gameState.supplies += s;
@@ -268,11 +254,6 @@ export const campActions = {
 
 const deathChecks = { 'Hobbit': 0.01, 'Man': 0.02, 'Dwarf': 0.02, 'Elf': 0.005, 'Wizard': 0.005 };
 
-/**
- * Rolls for character death based on race after a dangerous encounter.
- * @param {string} encounterName - The name of the encounter for the flavor text.
- * @returns {string} A string detailing any casualties, or an empty string if none.
- */
 export function performDeathRolls(encounterName = "battle") {
     let casualties = '';
     gameState.fellowship.forEach(member => {

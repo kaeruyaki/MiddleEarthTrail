@@ -21,7 +21,92 @@ export const caradhrasFailureMessages = [
  * Each key is a unique encounter ID.
  */
 export const encounters = {
-    // --- STORY ENCOUNTERS ---
+    // --- MORIA SEQUENCE ---
+    'west_gate_of_moria': {
+        name: "The West-gate of Moria",
+        description: "Before you stands a cliff of grey rock, smooth and sheer. At its base, a dark, still lake gives off a foul stench. Faint lines, like silver threads, are barely visible on the rock face, outlining two great pillars and an arch. These are the Doors of Durin, and they are shut. The air is heavy with a watchful silence, broken only by the unsettling stillness of the water.",
+        type: 'story',
+        trigger: 'landmark_arrival',
+        choices: [
+            { text: "Push on the doors", isCorrect: false },
+            { text: "Search for a keyhole", isCorrect: false },
+            { text: "Shout 'Open!' in Dwarvish", isCorrect: false },
+            { text: "Speak 'Mellon' (Friend) in Elvish", isCorrect: true },
+            { text: "Throw a rock in the lake", isCorrect: false },
+            { text: "Wait for someone to come out", isCorrect: false },
+        ],
+        onFailure: (dependencies) => {
+            const { gameState, triggerEncounterFlash, updateUI, showEncounterView } = dependencies;
+            triggerEncounterFlash('red');
+            const livingMembers = gameState.fellowship.filter(m => m.health > 0);
+            if (livingMembers.length <= 1) return "The lone survivor is seized by a tentacle and dragged into the murky depths. The quest ends here.";
+
+            const victim = livingMembers[Math.floor(Math.random() * livingMembers.length)];
+            victim.health -= 35; // Significant damage to the victim
+
+            livingMembers.forEach(rescuer => {
+                if (rescuer !== victim) {
+                    rescuer.health -= 10; // Minor damage to rescuers
+                }
+            });
+            updateUI();
+            
+            const failureText = `A ripple disturbs the black water. Suddenly, a score of pale, coiling tentacles erupt from the lake! One whips out and seizes ${victim.name}, dragging them towards the water's edge! The rest of the company rushes forward, hacking at the rubbery limbs to free their companion. In the frantic struggle, they manage to drive the creature back, but not before everyone is battered and shaken.`;
+            
+            const updatedDescription = `${encounters.west_gate_of_moria.description}<hr class='my-4 border-zinc-600'><p class='text-orange-400'>${failureText}</p>`;
+            showEncounterView(encounters.west_gate_of_moria.name, updatedDescription, encounters.west_gate_of_moria.choices);
+            return null; // Stop further processing
+        },
+        onSuccess: (dependencies) => {
+            const { gameState, showEncounterView } = dependencies;
+            const successText = "As Gandalf speaks the word 'Mellon', the silver lines on the door glow brightly, and the great stone slabs swing inward without a sound, revealing a vast darkness. You hurry inside, just as grasping tentacles begin to rise from the lake once more.";
+            // Transition to the Moria "town" hub
+            showEncounterView("The Doors of Durin", successText, [{ text: "Enter the darkness", action: () => {
+                gameState.flags.moriaPhase = 1;
+                document.dispatchEvent(new CustomEvent('showTown', { detail: { locationKey: 'moria' } }));
+                return null;
+            }}]);
+        }
+    },
+    'bridge_of_khazad_dum': {
+        name: "The Bridge of Khazad-dûm",
+        description: "You have fled through the endless dark, but at the Bridge of Khazad-dûm, a new terror emerges. A great shadow, surrounded by flame, rises from the abyss. Its darkness seems to swallow the light. It is a Balrog of Morgoth. Gandalf alone turns to face it on the narrow bridge. 'You cannot pass!' he cries, striking the bridge with his staff.",
+        type: 'story',
+        choices: [
+            { 
+                text: "You cannot pass!",
+                action: (dependencies) => {
+                    const { gameState, storyTriggers } = dependencies;
+                    storyTriggers.moria(gameState); // Gandalf falls
+                    return "Gandalf and the Balrog fall into the abyss. The Fellowship escapes, but their guide and friend is lost. Grief-stricken, you stumble out of the East-gate and into the dim light of the world.";
+                }
+            },
+            {
+                text: "Stand with Gandalf!",
+                condition: () => Math.random() < 0.05, // 5% chance for this option to even appear
+                action: (dependencies) => {
+                    const { gameState, storyTriggers } = dependencies;
+                    if (Math.random() < 0.05) { // Miracle outcome: 5% of the 5%
+                        const gandalf = gameState.fellowship.find(m => m.name === 'Gandalf');
+                        if (gandalf) gandalf.health = 10;
+                        gameState.morale = Math.min(100, gameState.morale + 50); // Massive morale boost
+                        return "Your valiant stand gives Gandalf the second he needs! As the bridge crumbles and the Balrog plunges into the abyss, Gandalf manages to cling to the broken edge. With a great heave, you pull him to safety, wounded and exhausted, but alive. A miracle has occurred this day.";
+                    } else { // Tragic outcome: 95% of the 5%
+                        storyTriggers.moria(gameState); // Gandalf falls
+                        const living = gameState.fellowship.filter(m => m.health > 0 && m.name !== 'Gandalf');
+                        if (living.length > 0) {
+                            const victim = living[Math.floor(Math.random() * living.length)];
+                            victim.health = 0; // Second member is killed
+                            gameState.morale -= 50; // Catastrophic morale hit
+                            return `You rush to Gandalf's side, but the Balrog's fiery whip lashes out as it falls, catching ${victim.name} and dragging them into the chasm as well. The loss is devastating.`;
+                        }
+                        return "You rush to Gandalf's side, but the Balrog's fiery whip lashes out as it falls. The loss is devastating.";
+                    }
+                }
+            }
+        ]
+    },
+    // --- OTHER STORY ENCOUNTERS ---
     'weathertop': {
         name: "The Witch-king at Weathertop",
         description: "At the summit of the ancient watchtower, you see them—five black figures against the skyline. The Nazgûl. Their leader draws a long sword that glitters with a cold, pale light. A cry of pure terror and hatred splits the air as they advance, and Frodo feels an overwhelming urge to put on the Ring.",
@@ -43,14 +128,13 @@ export const encounters = {
                 action: (dependencies) => {
                     const { gameState, triggerEncounterFlash, showEncounterView, stopGameLoop, showTravelView, updateUI, checkGameOver } = dependencies;
                     triggerEncounterFlash('white');
-                    if (Math.random() < 0.1) { // 10% chance of success
+                    if (Math.random() < 0.1) {
                         gameState.currentLocationKey = 'lothlorien';
                         gameState.pathTaken.push('lothlorien');
                         const successMessage = `With a final, desperate effort, you break through the storm's heart! The wind lessens, the snow thins, and ahead you see the slopes descending into a golden-hued valley. You have conquered the pass, but the ordeal has left you battered and weary.`;
                         showEncounterView("The Pass is Broken", successMessage, [{ text: "Continue", action: () => { stopGameLoop(); showTravelView(); return null; } }]);
                         return null;
                     } else {
-                        // Failure
                         gameState.fellowship.forEach(m => m.health -= 15);
                         gameState.morale -= 10;
                         updateUI();
@@ -69,29 +153,18 @@ export const encounters = {
             { 
                 text: "Turn back and take the path through Moria", 
                 action: (dependencies) => {
-                    const { gameState, showEncounterView, stopGameLoop, showTravelView } = dependencies;
+                    const { gameState, showEncounterView, stopGameLoop } = dependencies;
                     gameState.currentLocationKey = 'moria';
                     gameState.pathTaken.pop();
                     gameState.pathTaken.push('moria');
-                    showEncounterView("The Mountain's Wrath", "The mountain has defeated you. With heavy hearts, you turn back and take the dark and secret way through the Mines of Moria.", [{ text: "Continue", action: () => { stopGameLoop(); showTravelView(); return null; } }]);
+                    showEncounterView("The Mountain's Wrath", "The mountain has defeated you. With heavy hearts, you turn back and take the dark and secret way through the Mines of Moria.", [{ text: "Continue", action: () => {
+                        stopGameLoop();
+                        displayEvent(encounters['west_gate_of_moria']);
+                        return null;
+                    } }]);
                     return null;
                 }
             }
-        ]
-    },
-    'moria': {
-        name: "The Bridge of Khazad-dûm",
-        description: "You have fled through the endless dark of Moria, but at the bridge, a shadow rises from the depths. A Balrog of Morgoth, a demon of the ancient world, blocks your path. Gandalf alone turns to face it on the narrow bridge. 'You cannot pass!' he cries, striking the bridge with his staff.",
-        type: 'story',
-        trigger: 'landmark_arrival',
-        choices: [
-            { text: "Fly, you fools!", action: (dependencies) => { 
-                const { gameState, storyTriggers } = dependencies;
-                storyTriggers.moria(gameState);
-                gameState.currentLocationKey = 'lothlorien';
-                gameState.pathTaken.push('lothlorien');
-                return `Gandalf confronts the Balrog, and both fall into the abyss. The Fellowship escapes, but their guide and friend is lost. Grief-stricken, you make your way to the woods of Lothlórien.`;
-            }}
         ]
     },
     'amonhen': {
@@ -173,7 +246,6 @@ export const encounters = {
     'lost-in-wild': {
         name: "Lost in the Wild", description: "The landscape has become a monotonous, rolling terrain. The path is gone. You are lost.", type: "neutral", trigger: "travel", weight: 10,
         choices: [
-            // BUG FIX: Condition now checks for "Strider" OR "Aragorn"
             { text: "Trust the Ranger", condition: (gameState) => gameState.fellowship.some(m => (m.name === 'Aragorn' || m.name === 'Strider') && m.health > 0), action: ({advanceTime}) => { advanceTime(3); return `<span class="text-positive">Aragorn's skill guides you true after a few hours of searching.</span> You find the main path again.`; } },
             { text: "Climb for a view", action: ({advanceTime, gameState, updateUI}) => { advanceTime(2); if (Math.random() < 0.6) { return `<span class="text-positive">After a short climb, you spot the correct path from a high vantage.</span>`; } else { const m = gameState.fellowship.find(m => m.health > 0); m.health -= 10; updateUI(); return `<span class="text-negative">${m.name} slips and falls while climbing.</span> The path remains hidden.`; } } },
             { text: "Press on blindly", action: ({advanceTime, gameState}) => { advanceTime(4); gameState.morale -= 10; return `<span class="text-neutral">You wander for hours, your spirits sinking, before finally stumbling back onto the path.</span>`; } }
@@ -226,7 +298,6 @@ export const encounters = {
     },
     'athelas': {
         name: "Athelas (Kingsfoil)", description: "Aragorn kneels, his keen eyes spotting a patch of a seemingly plain weed. 'This is Athelas,' he murmurs. 'Kingsfoil.'", type: 'friendly', trigger: 'travel', weight: 2,
-        // BUG FIX: Condition now checks for "Strider" OR "Aragorn"
         condition: (gameState) => gameState.fellowship.some(m => (m.name === 'Aragorn' || m.name === 'Strider') && m.health > 0),
         choices: [
             { text: "Gather it", action: ({advanceTime, gameState}) => { advanceTime(1); gameState.inventory.athelas = (gameState.inventory.athelas || 0) + 1; return `You spend some time carefully gathering the precious herb, adding one use of Athelas to your inventory.`; } },
@@ -276,7 +347,6 @@ export const encounters = {
                 return [
                     { text: "Run for a river crossing", action: () => { advanceTime(2); gameState.distanceTraveled += 5; return `You race for a nearby river, hoping the water will deter the wraith. The desperate flight takes its toll.`; } },
                     { text: "Hide in the grass", action: () => { advanceTime(3); if (Math.random() < 0.5) { gameState.morale -= 20; return `The Rider passes so close you can hear its fell whispers. The terror is immense, but you remain unseen.`; } else { return `You lie still for what feels like an eternity. The Rider eventually moves on.`; } } },
-                    // BUG FIX: Condition now checks for "Strider" OR "Aragorn"
                     { text: "Ward with fire", condition: (gameState) => gameState.fellowship.some(m => (m.name === 'Aragorn' || m.name === 'Strider') && m.health > 0), action: () => { advanceTime(1); gameState.morale -= 5; return `Aragorn brandishes a torch, and the Rider recoils from the flame, giving you time to escape.`; } }
                 ];
             }

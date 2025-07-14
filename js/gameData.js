@@ -34,8 +34,9 @@ export const journeyData = {
     'weathertop': { name: "Weathertop", x: 320, y: 358, distance: 150, legName: "The Road to the Trollshaws", next: 'trollshaws', locationType: 'wild' },
     'trollshaws': { name: "Trollshaws", x: 350, y: 355, distance: 175, legName: "The Road to Rivendell", next: 'rivendell', locationType: 'wild' },
     'rivendell': { name: "Rivendell", x: 400, y: 350, distance: 250, next: 'caradhras_pass', type: 'town', description: "The road has been hard, but at last you descend into a hidden valley where the air is sweet with the scent of pine. The sound of waterfalls echoes from the steep, wooded slopes, and you see the lights of a house deep in the valley's fold. This is Imladris; the Last Homely House East of the Sea. You are brought before Elrond Half-elven, whose face is ageless and kind, yet his eyes hold the memory of ages. He looks upon Frodo's pale face with concern. 'He is fading,' Elrond says gravely. 'He must be tended to at once.'", locationType: 'town' },
-    'caradhras_pass': { name: "Pass of Caradhras", x: 450, y: 400, distance: 300, legName: "Over the Misty Mountains", next: 'lothlorien', locationType: 'wild' },
-    'moria': { name: "Mines of Moria", x: 460, y: 450, distance: 350, legName: "Through Khazad-dûm", next: 'lothlorien', locationType: 'wild' },
+    'caradhras_pass': { name: "Pass of Caradhras", x: 450, y: 400, distance: 300, legName: "Over the Misty Mountains", next: 'moria', locationType: 'wild' },
+    // FIX: Changed name for clarity in debug menu, and added arrivalEncounter key
+    'moria': { name: "Moria", arrivalEncounter: 'west_gate_of_moria', x: 460, y: 450, distance: 350, legName: "Through Khazad-dûm", next: 'lothlorien', type: 'town', description: "The Doors shut behind you, plunging the world into absolute darkness and silence, save for the sound of your own breathing. Gandalf's staff illuminates a vast, empty hall, the first of many. The air is cold and dead. This is the great delving of the Dwarves, and you are trespassers in a city of ghosts.", locationType: 'wild' },
     'lothlorien': { name: "Lothlórien", x: 520, y: 480, distance: 550, legName: "The Great River", next: 'anduin', locationType: 'wild' },
     'anduin': { name: "Anduin River", x: 550, y: 550, distance: 650, legName: "The Breaking of the Fellowship", next: 'amonhen', locationType: 'wild' },
     'amonhen': { name: "Amon Hen", x: 560, y: 600, distance: 700, legName: "The Emyn Muil", next: 'emynmuil', locationType: 'wild' },
@@ -74,8 +75,6 @@ export const townActions = {
                 advanceTime(8);
                 gameState.morale -= 10;
                 meetStrider(gameState);
-                // BUG FIX: Do not set the location here. Just start the travel.
-                // The game loop will handle the arrival at Weathertop.
                 showEncounterView("A Narrow Escape", "You follow the grim-faced ranger out of the common room and into a private parlor. Hours later, a terrifying shriek echoes from outside, followed by the crash of a door being splintered. The Black Riders have found the inn, but they have found your beds empty. Under the cover of darkness, Strider leads you out of Bree and into the wild, his knowledge of the land your only shield. He is now one of your company.", [{ text: "Continue", action: () => { stopGameLoop(); showTravelView(); return null; } }]);
             } 
         },
@@ -94,7 +93,6 @@ export const townActions = {
                     gameState.morale -= 25;
                     updateUI();
                     meetStrider(gameState);
-                    // BUG FIX: Do not set the location here. Just start the travel.
                     showEncounterView("Night Terrors", resultText, [{ text: "Continue", action: () => { stopGameLoop(); showTravelView(); return null; } }]);
                 }
             } 
@@ -108,9 +106,42 @@ export const townActions = {
         { id: 'riv_council', text: "Attend the Council of Elrond", oneTime: true, condition: (gameState) => gameState.flags.rivendellPhase === 2, action: ({ dialogueEl, advanceTime, gameState, storyTriggers, renderTownActions }) => { advanceTime(4); storyTriggers.formFellowship(gameState); dialogueEl.innerHTML = `You are summoned to a great council. Elves, Dwarves, and Men are gathered, and the fate of the Ring is debated. Boromir of Gondor tells of his city's long struggle and his desire to use the Ring against the Enemy. But Elrond's counsel prevails. 'The Ring is wholly evil,' he declares. 'It must be unmade in the fires where it was forged.' A heavy silence falls, broken at last by Frodo. 'I will take the Ring,' he says, 'though I do not know the way.' At his words, companions rise to join him. Gandalf, Aragorn, Legolas, Gimli, and Boromir pledge themselves to the quest. The Fellowship of the Ring is formed.`; gameState.flags.rivendellPhase = 3; renderTownActions('rivendell'); } },
         { id: 'riv_prepare', text: "Prepare for Departure", oneTime: true, condition: (gameState) => gameState.flags.rivendellPhase === 3, action: ({ dialogueEl, advanceTime, gameState, renderTownActions }) => { advanceTime(8); gameState.food += 50; dialogueEl.innerHTML = `You spend the day gathering provisions. The Elves provide you with Lembas, a special waybread that is both nourishing and light. (+50 Food)`; renderTownActions('rivendell'); } },
         { id: 'riv_leave', text: "Leave Rivendell", isLeaveAction: true, condition: (gameState) => gameState.flags.rivendellPhase === 3, action: ({ showTravelView }) => { 
-            // BUG FIX: Do not set the location here. Just start the travel.
-            // The game loop will handle the arrival at Caradhras Pass.
             showTravelView(); 
         } }
+    ],
+    'moria': [
+        { 
+            id: 'moria_press_on', 
+            text: "Press on through the darkness", 
+            condition: (gameState) => gameState.flags.moriaPhase === 1,
+            action: ({ dialogueEl, advanceTime }) => { 
+                advanceTime(4); 
+                dialogueEl.innerHTML = `You travel for hours through the oppressive, silent dark. The path is mercifully straight, but the feeling of being deep within the earth weighs heavily on your spirits.`; 
+            } 
+        },
+        { 
+            id: 'moria_search_tomb', 
+            text: "Search for Balin's Tomb", 
+            oneTime: true,
+            condition: (gameState) => gameState.flags.moriaPhase === 1,
+            action: ({ advanceTime, gameState, showEncounterView }) => { 
+                advanceTime(2);
+                const eventText = "Guided by Gandalf, you find a side-chamber. A ray of light from a high shaft pierces the gloom, illuminating a single, oblong tomb. The stone is cloven, and upon it are carved runes: 'HERE LIES BALIN, SON OF FUNDIN, LORD OF MORIA.' As Gimli weeps, Gandalf picks up a tattered book. Its last pages tell a grim tale of Orcs, a strange presence in the deep water, and a final, desperate stand... As he closes the book, a sound begins, echoing from the depths of the mine. A slow, rhythmic beating. Doom, doom, doom. It is the sound of great drums, and they are getting closer.";
+                showEncounterView("Balin's Tomb", eventText, [{ text: "The drums are getting closer...", action: () => {
+                    gameState.flags.moriaPhase = 3;
+                    document.dispatchEvent(new CustomEvent('showTown', { detail: { locationKey: 'moria' } }));
+                    return null;
+                }}]);
+            } 
+        },
+        {
+            id: 'moria_flee',
+            text: "Flee to the Bridge!",
+            isLeaveAction: true,
+            condition: (gameState) => gameState.flags.moriaPhase === 3,
+            action: ({ displayEvent, encounters }) => {
+                displayEvent(encounters['bridge_of_khazad_dum']);
+            }
+        }
     ]
 };
