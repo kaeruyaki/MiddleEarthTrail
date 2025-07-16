@@ -21,6 +21,21 @@ export const caradhrasFailureMessages = [
  * Each key is a unique encounter ID.
  */
 export const encounters = {
+    // --- STARTING ENCOUNTER ---
+    'the_journey_begins': {
+        name: "The Shadow of the Past",
+        description: `The door of Bag End closes behind you for what feels like the last time. Every rolling hill and familiar lane of the Shire is tinged with a new sadness, for you know you are leaving it all behind. Gandalf's final, urgent words echo in your mind, his voice low and serious. "The enemy is moving. This is no longer a matter of hiding a curious trinket. The Nine are abroad; they will be drawn to the Ring. You must leave, and leave quickly. Keep it secret. Keep it safe." The weight of his words—and the Ring in your pocket—settles upon you. You take a deep breath of the sweet Shire-air and turn your face to the East, towards the growing shadow.`,
+        type: 'story',
+        choices: [
+            {
+                text: "Step onto the Road",
+                action: ({ showTravelView }) => {
+                    showTravelView();
+                    return null; // Stops the encounter flow
+                }
+            }
+        ]
+    },
     // --- MORIA SEQUENCE ---
     'west_gate_of_moria': {
         name: "The West-gate of Moria",
@@ -54,7 +69,8 @@ export const encounters = {
             const failureText = `A ripple disturbs the black water. Suddenly, a score of pale, coiling tentacles erupt from the lake! One whips out and seizes ${victim.name}, dragging them towards the water's edge! The rest of the company rushes forward, hacking at the rubbery limbs to free their companion. In the frantic struggle, they manage to drive the creature back, but not before everyone is battered and shaken.`;
             
             const updatedDescription = `${encounters.west_gate_of_moria.description}<hr class='my-4 border-zinc-600'><p class='text-orange-400'>${failureText}</p>`;
-            showEncounterView(encounters.west_gate_of_moria.name, updatedDescription, encounters.west_gate_of_moria.choices);
+            // For a puzzle, we re-display the encounter with the updated description
+            showEncounterView(encounters.west_gate_of_moria.name, updatedDescription, encounters.west_gate_of_moria.choices, encounters.west_gate_of_moria);
             return null; // Stop further processing
         },
         onSuccess: (dependencies) => {
@@ -119,7 +135,7 @@ export const encounters = {
     },
     'caradhras_pass': {
         name: "The Pass of Caradhras",
-        description: "As you climb higher into the mountains, the air grows thin and a cruel wind howls. A sudden, unnatural snowstorm descends, blinding you with swirling white. The voice of Saruman echoes in the storm, a fell magic seeking to crush you.",
+        description: `The mountain feels alive, and it hates you. As you climb higher, the air grows thin and a cruel wind howls like a hunting wolf. A sudden, unnatural snowstorm descends, a blinding, swirling wall of white that stings your face and freezes the breath in your lungs. It is more than mere weather; you can feel a malevolent will behind the storm, a fell voice on the wind, seeking to crush you and your quest before it can even cross the Misty Mountains.`,
         type: 'story',
         trigger: 'landmark_arrival',
         choices: [
@@ -153,7 +169,7 @@ export const encounters = {
             { 
                 text: "Turn back and take the path through Moria", 
                 action: (dependencies) => {
-                    const { gameState, showEncounterView, stopGameLoop } = dependencies;
+                    const { gameState, showEncounterView, stopGameLoop, displayEvent } = dependencies;
                     gameState.currentLocationKey = 'moria';
                     gameState.pathTaken.pop();
                     gameState.pathTaken.push('moria');
