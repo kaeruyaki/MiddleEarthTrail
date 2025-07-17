@@ -68,8 +68,19 @@ const storySimulation = {
         state.flags.frodoHasStingAndMithril = true;
         state.flags.rivendellPhase = 3;
     },
-    'moria': (state) => storyTriggers.moria(state),
-    'amonhen': (state) => storyTriggers.amonhen(state),
+    'moria': (state) => {
+        // When debugging past moria, we assume Gandalf falls
+        storyTriggers.rivendell(state); // Make sure fellowship is formed
+        storyTriggers.formFellowship(state);
+        storyTriggers.moria(state);
+    },
+    'amonhen': (state) => {
+        // When debugging past amon hen, fellowship breaks
+        storyTriggers.rivendell(state);
+        storyTriggers.formFellowship(state);
+        storyTriggers.moria(state);
+        storyTriggers.amonhen(state);
+    },
 };
 
 /**
@@ -104,6 +115,7 @@ export function setupNewGame(profession, startKey = 'shire', debugOptions = {}) 
         mode: 'paused', // Modes: 'paused', 'traveling', 'event', 'camp', 'town'
         autocampEnabled: false,
         targetDistance: 1000,
+        pendingEncounters: 0, // NEW: Tracks encounters for the current day
         fellowship: [
             { name: 'Frodo', race: 'Hobbit', health: 100 },
             { name: 'Sam', race: 'Hobbit', health: 100 },
@@ -124,13 +136,14 @@ export function setupNewGame(profession, startKey = 'shire', debugOptions = {}) 
             rivendellPhase: 0,
             frodoHasStingAndMithril: false,
             caradhrasAttempts: 0,
+            dailyRollMade: false, // NEW: Tracks if daily encounter roll has been made
             isQuickTravel: debugOptions.isQuickTravel || false,
             isStoryOnly: debugOptions.isStoryOnly || false,
         },
     };
 
     // 2. Simulate journey up to the startKey for debugging
-    const canonicalPath = ['shire', 'bree', 'weathertop', 'trollshaws', 'rivendell', 'caradhras_pass', 'moria', 'lothlorien', 'anduin', 'amonhen'];
+    const canonicalPath = ['shire', 'bree', 'weathertop', 'trollshaws', 'rivendell', 'caradhras_pass', 'moria', 'lothlorien', 'anduin', 'amonhen', 'emynmuil', 'deadmarshes', 'blackgate', 'cirithungol', 'mountdoom'];
     const startIndex = canonicalPath.indexOf(startKey);
 
     if (startIndex > 0) {

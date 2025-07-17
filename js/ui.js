@@ -161,7 +161,8 @@ export function showEncounterView(title, description, choices, encounter = null)
         if (choices.length === 1) button.classList.add('w-full', 'sm:w-1/2');
 
         button.onclick = () => {
-            document.dispatchEvent(new CustomEvent('resolveEncounterChoice', { detail: { choice, title, encounter } }));
+            // Pass a copy of the choice object to avoid issues with dynamic choices
+            document.dispatchEvent(new CustomEvent('resolveEncounterChoice', { detail: { choice: {...choice}, title, encounter } }));
         };
 
         if (choice.condition && !choice.condition(gameState)) {
@@ -218,6 +219,13 @@ export function showTownView(locationKey) {
 
 export function renderTownActions(locationKey) {
     const actions = townActions[locationKey];
+    if (!actions) { // Handle safe havens like Lothlorien that have no actions
+        const actionsContainer = document.getElementById('town-actions-container');
+        actionsContainer.innerHTML = `<button id="leave-town-btn" class="game-button bg-emerald-800 hover:bg-emerald-700 text-white font-bold py-3 px-4 rounded-lg col-span-full">Leave this place</button>`;
+        document.getElementById('leave-town-btn').addEventListener('click', () => showTravelView());
+        return;
+    }
+
     const actionsContainer = document.getElementById('town-actions-container');
     actionsContainer.innerHTML = ''; 
 
@@ -277,11 +285,13 @@ export function showMapView(returnAction) {
  * @param {object} event - The encounter object from the encounters data.
  */
 export function displayEvent(event) {
+    // This object provides all necessary dependencies for choice actions
+    const dependencies = { gameState };
+    
     let choices = event.choices;
     if (typeof choices === 'function') {
-        choices = choices(gameState);
+        choices = choices(dependencies);
     }
-    // BUG FIX: Pass the entire event object as the 4th argument so the puzzle logic can be triggered.
     showEncounterView(event.name, event.description, choices, event);
 }
 

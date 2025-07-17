@@ -40,28 +40,32 @@ function initializeGame(profession, startKey, debugOptions) {
     
     setupNewGame(profession, startKey, debugOptions);
     
-    const landmarkData = journeyData[startKey];
-    // FIX: Use arrivalEncounter key to find the correct story event for debug starts
-    const storyEncounterKey = landmarkData.arrivalEncounter || startKey;
-    const storyEncounter = encounters[storyEncounterKey];
-
-    // This new logic correctly handles starting at any location.
-    if (storyEncounter && storyEncounter.trigger === 'landmark_arrival') {
-        displayEvent(storyEncounter);
+    // CORRECTED: Added special handling for the very first start of the game.
+    if (startKey === 'shire') {
+        displayEvent(encounters['the_journey_begins']);
     } 
-    else if (startKey === 'moria') {
-        // This case is for starting *inside* moria, post-gate.
-        gameState.flags.moriaPhase = 1;
-        showTownView('moria');
-    }
-    else if (startKey === 'rivendell') {
-        handleRivendellArrivalLogic();
-    } 
-    else if (landmarkData.type === 'town') {
-        showTownView(startKey);
-    } 
+    // Logic for debug starts at other locations
     else {
-        showTravelView();
+        const landmarkData = journeyData[startKey];
+        const storyEncounterKey = landmarkData.arrivalEncounter || startKey;
+        const storyEncounter = encounters[storyEncounterKey];
+
+        if (storyEncounter && storyEncounter.trigger === 'landmark_arrival') {
+            displayEvent(storyEncounter);
+        } 
+        else if (startKey === 'moria') {
+            gameState.flags.moriaPhase = 1;
+            showTownView('moria');
+        }
+        else if (startKey === 'rivendell') {
+            handleRivendellArrivalLogic();
+        } 
+        else if (landmarkData.type === 'town' || journeyData[startKey].zone === 'Lothlorien') {
+            showTownView(startKey);
+        } 
+        else {
+            showTravelView();
+        }
     }
 
     updateUI();
@@ -124,18 +128,27 @@ document.addEventListener('handleRivendellArrival', handleRivendellArrivalLogic)
 document.addEventListener('resolveEncounterChoice', (e) => {
     const { choice, title, encounter } = e.detail;
 
-    // FIX: This logic now correctly handles special puzzle encounters like the West Gate.
-    if (encounter && (encounter.onSuccess || encounter.onFailure)) {
+    // BUG FIX: If there's no encounter object, it's a simple "Continue" screen.
+    // The action is already defined in the choice object, so we just execute it.
+    if (!encounter) {
+        if (choice.action) {
+            choice.action();
+        }
+        return; // Exit early to prevent crash.
+    }
+
+    // Handle special puzzle encounters like the West Gate of Moria
+    if (encounter.onSuccess || encounter.onFailure) {
         if (choice.isCorrect) {
             encounter.onSuccess({ gameState, showEncounterView, displayEvent, encounters });
         } else {
             encounter.onFailure({ gameState, triggerEncounterFlash, updateUI, showEncounterView, checkGameOver });
         }
-        return; // Stop processing after handling the puzzle choice.
+        return; 
     }
 
-    // Standard encounter choice resolution
-    const result = choice.action({
+    // Create a dependencies object to pass to action functions
+    const dependencies = {
         gameState,
         advanceTime,
         triggerEncounterFlash,
@@ -147,12 +160,39 @@ document.addEventListener('resolveEncounterChoice', (e) => {
         storyTriggers,
         encounters,
         displayEvent
-    });
+    };
 
+    let choicesToUse = encounter.choices;
+    // If choices are a function, resolve them to get the array of choices
+    if (typeof choicesToUse === 'function') {
+        choicesToUse = choicesToUse(dependencies);
+    }
+    
+    // Find the actual choice object from the potentially dynamically generated list
+    const actualChoice = choicesToUse.find(c => c.text === choice.text);
+    if (!actualChoice) {
+        console.error("Could not find matching choice.", choice, choicesToUse);
+        return;
+    }
+
+    // Execute the action and get the result text
+    const result = actualChoice.action(dependencies);
+
+    // If the action returns null, it handles its own UI transition (e.g., game over, puzzles)
     if (result === null || gameState.isGameOver) {
         return;
     }
-    showEncounterView(title, result, [{ text: "Continue", action: () => { stopGameLoop(); showTravelView(); return null; } }]);
+
+    // Display the result of the choice.
+    // CORRECTED: This action now uses the canonical stopGameLoop function.
+    // This ensures the game state is correctly set to 'paused' and ready for the
+    // user to resume travel, which will correctly trigger the next day's encounter roll.
+    const continueAction = () => {
+        stopGameLoop();
+        showTravelView();
+        return null;
+    };
+    showEncounterView(title, result, [{ text: "Continue", action: continueAction }]);
     updateUI();
 });
 
