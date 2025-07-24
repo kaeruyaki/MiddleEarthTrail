@@ -1,63 +1,108 @@
+/* --- 1980s Vector Graphics Stylesheet (CRT Gold Version) --- */
+
+/* --- Base Setup & Fonts --- */
 body {
     font-family: 'Inter', sans-serif;
-    background-color: #18181b; /* Zinc 900 */
-    color: #d4d4d8; /* Zinc 300 */
+    background-color: #1a1a1a; /* Dark grey background */
+    color: #facc15; /* Medium yellow for standard text */
+    --glow-color: rgba(250, 204, 21, 0.8); /* Glow effect color (yellow-400) */
+    --bright-glow-color: rgba(254, 252, 232, 0.9); /* Brightest glow (yellow-50) */
 }
+
+/* --- Vector Art Title --- */
 .font-title {
     font-family: 'IM Fell English SC', serif;
+    -webkit-text-stroke: 1px #facc15; /* Outlined text for titles */
+    color: transparent;
+    text-shadow: 0 0 2px var(--glow-color);
 }
-/* Custom scrollbar for a more thematic feel */
-::-webkit-scrollbar {
-    width: 8px;
+
+/* --- Main Layout Containers --- */
+#main-column,
+.status-panel {
+    background-color: transparent;
+    border: 1px solid #facc15; /* Medium yellow border */
+    box-shadow: 0 0 2px var(--glow-color);
+    border-radius: 0; /* Sharp corners */
 }
-::-webkit-scrollbar-track {
-    background: #27272a; /* Zinc 800 */
+
+.status-header {
+    border-bottom: 1px solid #facc15;
 }
-::-webkit-scrollbar-thumb {
-    background: #52525b; /* Zinc 600 */
-    border-radius: 4px;
+
+/* --- Vector Buttons --- */
+.game-button {
+    background: transparent;
+    border: 1px solid #facc15; /* Medium yellow */
+    color: #facc15;
+    font-weight: bold;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 0 2px var(--glow-color);
+    border-radius: 0;
+    transform-origin: center;
 }
-::-webkit-scrollbar-thumb:hover {
-    background: #71717a; /* Zinc 500 */
+
+.game-button:hover:not(:disabled) {
+    background-color: rgba(254, 252, 232, 0.1);
+    color: #fefce8; /* Almost white on hover */
+    border-color: #fefce8;
+    box-shadow: 0 0 3px var(--bright-glow-color);
+    transform: scale(1.02);
 }
-/* Styling for disabled buttons */
+
 .game-button:disabled {
-    background-color: #3f3f46; /* Zinc 700 */
-    color: #a1a1aa; /* Zinc 400 */
+    border-color: #71717a; /* Muted grey for disabled */
+    color: #71717a;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
+    background-color: transparent;
 }
+
+/* --- Other UI Elements --- */
+.profession-card {
+    background: transparent;
+    border: 1px solid #facc15; /* Medium yellow border */
+    color: #facc15;
+    transition: all 0.2s ease-in-out;
+}
+.profession-card.selected {
+    border-color: #fefce8; /* Almost white when selected */
+    color: #fefce8;
+    box-shadow: 0 0 4px var(--bright-glow-color);
+    transform: scale(1.05);
+}
+
+/* --- Map Styles --- */
 .map-landmark-label {
      font-size: 14px;
-     fill: #fde68a; /* Amber 200 */
+     fill: #fde68a;
      text-anchor: middle;
      pointer-events: none;
      font-weight: 600;
-     paint-order: stroke;
-     stroke: #18181b; /* Zinc 900 */
-     stroke-width: 2px;
-     stroke-linecap: butt;
-     stroke-linejoin: miter;
+     stroke: none;
 }
 .map-feature {
     fill: none;
-    stroke: #52525b; /* Zinc 600 */
+    stroke: #facc15; 
+    stroke-width: 1;
+}
+.map-path {
+    stroke: #fde68a; 
     stroke-width: 1.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    opacity: 0.5;
 }
-/* Screen flash animations */
-@keyframes flashWhite {
-    50% { background-color: rgba(255, 255, 255, 0.3); }
+.map-landmark {
+    fill: #fefce8; 
 }
-@keyframes flashRed {
-    50% { background-color: rgba(220, 38, 38, 0.3); }
+.map-player {
+    fill: #fefce8; 
+    stroke: #fde68a;
+    stroke-width: 1;
 }
-.flash-white {
-    animation: flashWhite 0.4s ease-in-out;
-}
-.flash-red {
-    animation: flashRed 0.4s ease-in-out;
+
+/* Remove default tailwind styles we don't need */
+.rounded-lg, .rounded-xl, .shadow-lg {
+    border-radius: 0 !important;
+    box-shadow: none !important;
 }

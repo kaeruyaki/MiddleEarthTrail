@@ -8,86 +8,100 @@
     <link href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
 </head>
-<body class="bg-zinc-900 text-stone-300">
+<body>
 
     <!-- Start Screen -->
-    <div id="start-screen" class="fixed inset-0 bg-zinc-900/95 flex flex-col items-center justify-center z-50 p-4">
-        <h1 class="font-title text-5xl md:text-6xl text-amber-200 mb-4 text-center" style="text-shadow: 0 0 15px rgba(252, 211, 77, 0.4);">The Middle Earth Trail</h1>
-        
-        <!-- New Introduction Text -->
-        <div class="text-lg text-stone-400 max-w-3xl text-center mb-6 space-y-3">
-            <p>
-                You are Frodo, nephew to the eccentric and beloved Bilbo, who vanished years ago on another of his mad adventures. Like all Hobbits, you are a gentle soul, fond of peace, quiet, and good tilled earth. A day filled with six meals, a pint at the local inn, and a bit of pipe-weed is a day well spent. Adventures are nasty, disturbing things that make you late for dinner.
-            </p>
-            <p>
-                You fondly remember your old friend Gandalf, the wandering wizard whose fireworks were the talk of every party. It was he who sent Bilbo on his great journey, and he who would visit you often in the long years after. He was always fascinated by the simple magic ring Bilbo left behind. But then Gandalf disappeared for many years, and when he returned, the laughter was gone from his eyes. The ring, he explained, was something far more dangerous than a simple trinket.
-            </p>
-        </div>
+    <div id="start-screen" class="fixed inset-0 flex flex-col items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="flex flex-col items-center justify-center w-full max-w-3xl py-8">
+            <h1 class="font-title text-5xl md:text-6xl mb-4 text-center">The Middle Earth Trail</h1>
+            
+            <!-- CORRECTED: Removed the 'status-panel' class to remove the outline box -->
+            <div class="my-4 w-full max-w-lg">
+                <img src="Graphics/00_Screen_TheShire.svg" alt="A vector-style drawing of the Shire." class="w-full h-auto">
+            </div>
+            
+            <!-- Restored original dialogue -->
+            <div class="text-lg max-w-3xl text-center mb-6 space-y-3">
+                <p>
+                    You are Frodo, nephew to the eccentric and beloved Bilbo, who vanished years ago on another of his mad adventures. Like all Hobbits, you are a gentle soul, fond of peace, quiet, and good tilled earth. A day filled with six meals, a pint at the local inn, and a bit of pipe-weed is a day well spent. Adventures are nasty, disturbing things that make you late for dinner.
+                </p>
+                <p>
+                    You fondly remember your old friend Gandalf, the wandering wizard whose fireworks were the talk of every party. It was he who sent Bilbo on his great journey, and he who would visit you often in the long years after. He was always fascinated by the simple magic ring Bilbo left behind. But then Gandalf disappeared for many years, and when he returned, the laughter was gone from his eyes. The ring, he explained, was something far more dangerous than a simple trinket.
+                </p>
+            </div>
 
-        <p class="text-lg text-stone-300 font-semibold max-w-2xl text-center mb-8">Before you set out, you must choose your family's background. This choice determines your starting resources.</p>
-        
-        <div class="flex flex-wrap justify-center gap-4 mb-8">
-            <div class="profession-card cursor-pointer bg-black/20 border-2 border-white/10 rounded-lg p-6 w-52 text-center transition-all duration-300 hover:border-amber-400/50 hover:scale-105" data-profession="Baggins">
-                <h3 class="font-title text-2xl text-emerald-300 mb-2">Baggins</h3>
-                <p class="text-stone-400">More Gold & Food</p>
-            </div>
-            <div class="profession-card cursor-pointer bg-black/20 border-2 border-white/10 rounded-lg p-6 w-52 text-center transition-all duration-300 hover:border-amber-400/50 hover:scale-105" data-profession="Took">
-                <h3 class="font-title text-2xl text-emerald-300 mb-2">Took</h3>
-                <p class="text-stone-400">More Supplies</p>
-            </div>
-            <div class="profession-card cursor-pointer bg-black/20 border-2 border-white/10 rounded-lg p-6 w-52 text-center transition-all duration-300 hover:border-amber-400/50 hover:scale-105" data-profession="Brandybuck">
-                <h3 class="font-title text-2xl text-emerald-300 mb-2">Brandybuck</h3>
-                <p class="text-stone-400">All-arounder</p>
-            </div>
-        </div>
-        
-        <div class="bg-zinc-800/50 border border-zinc-700 rounded-lg p-4 mb-8 w-full max-w-md">
-            <h4 class="font-title text-lg text-center text-stone-400 mb-3">Developer Options</h4>
-            <div class="flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                    <label for="debug-start-select" class="text-stone-400">Start Location:</label>
-                    <select id="debug-start-select" class="bg-zinc-700 border border-zinc-600 rounded-md px-3 py-1 text-stone-300"></select>
+            <p class="text-lg font-semibold text-center mb-8">Before you set out, you must choose your family's background.</p>
+            
+            <div class="flex flex-wrap justify-center gap-4 mb-8">
+                <div class="profession-card cursor-pointer p-6 w-52 text-center" data-profession="Baggins" onclick="selectProfession(this)">
+                    <h3 class="font-title text-2xl mb-2">Baggins</h3>
+                    <p>More Gold & Food</p>
                 </div>
-                <div class="flex items-center gap-4 text-stone-300">
-                    <div>
-                        <input type="checkbox" id="debug-quick-travel">
-                        <label for="debug-quick-travel">Quick Travel</label>
-                    </div>
-                    <div>
-                        <input type="checkbox" id="debug-story-only">
-                        <label for="debug-story-only">Story Mode Only</label>
-                    </div>
+                <div class="profession-card cursor-pointer p-6 w-52 text-center" data-profession="Took" onclick="selectProfession(this)">
+                    <h3 class="font-title text-2xl mb-2">Took</h3>
+                    <p>More Supplies</p>
+                </div>
+                <div class="profession-card cursor-pointer p-6 w-52 text-center" data-profession="Brandybuck" onclick="selectProfession(this)">
+                    <h3 class="font-title text-2xl mb-2">Brandybuck</h3>
+                    <p>All-arounder</p>
                 </div>
             </div>
-        </div>
+            
+            <div class="status-panel p-4 mb-8 w-full max-w-md">
+                <h4 class="font-title text-lg text-center mb-3">Developer Options</h4>
+                <div class="flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <label for="debug-start-select">Start Location:</label>
+                        <select id="debug-start-select" class="bg-transparent border border-[#b45309] px-3 py-1"></select>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <div>
+                            <input type="checkbox" id="debug-quick-travel">
+                            <label for="debug-quick-travel">Quick Travel</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="debug-story-only">
+                            <label for="debug-story-only">Story Mode Only</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        <button id="begin-journey-button" class="font-title text-2xl bg-amber-700 hover:bg-amber-600 text-amber-50 font-bold py-3 px-12 rounded-lg shadow-lg transition-transform hover:scale-105 disabled:bg-zinc-700 disabled:text-zinc-500 disabled:cursor-not-allowed" disabled>Begin Journey</button>
+            <button id="begin-journey-button" class="font-title text-2xl game-button py-3 px-12" disabled>Begin Journey</button>
+        </div>
     </div>
 
     <!-- Main Game Container -->
     <div id="game-container" class="hidden w-full max-w-7xl mx-auto p-4 lg:p-6">
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             
-            <div id="main-column" class="lg:col-span-2 bg-black/20 rounded-xl shadow-lg border border-white/10 p-4 sm:p-6 flex flex-col">
+            <div id="main-column" class="lg:col-span-2 p-4 sm:p-6 flex flex-col min-h-[60vh] lg:min-h-[80vh]">
                 <div id="main-view" class="flex-grow flex flex-col">
                     <!-- Views will be dynamically inserted here -->
                 </div>
             </div>
 
             <div class="flex flex-col gap-4 lg:gap-6">
-                <div class="bg-black/20 rounded-xl shadow-lg border border-white/10 p-4 sm:p-6">
-                    <h2 class="font-title text-2xl text-emerald-300 border-b border-white/10 pb-2 mb-4">Journey Status</h2>
+                <div class="status-panel p-4 sm:p-6">
+                    <h2 class="font-title text-2xl status-header pb-2 mb-4">Journey Status</h2>
                     <div id="party-status-display" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 gap-4 text-sm"></div>
                 </div>
-                <div class="bg-black/20 rounded-xl shadow-lg border border-white/10 p-4 sm:p-6">
-                    <h2 id="fellowship-title" class="font-title text-2xl text-emerald-300 border-b border-white/10 pb-2 mb-4">The Company</h2>
+                <div class="status-panel p-4 sm:p-6">
+                    <h2 id="fellowship-title" class="font-title text-2xl status-header pb-2 mb-4">The Company</h2>
                     <div id="fellowship-display" class="space-y-3"></div>
                 </div>
             </div>
 
         </div>
     </div>
-
+    
+    <script>
+        // Simple helper for the profession cards
+        function selectProfession(element) {
+            document.querySelectorAll('.profession-card').forEach(card => card.classList.remove('selected'));
+            element.classList.add('selected');
+        }
+    </script>
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

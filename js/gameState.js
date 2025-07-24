@@ -48,7 +48,8 @@ export const storyTriggers = {
     'amonhen': (state) => {
         const boromir = state.fellowship.find(m => m.name === 'Boromir');
         if (boromir) boromir.health = 0;
-        state.fellowship = state.fellowship.filter(m => ['Frodo', 'Sam', 'Aragorn', 'Legolas', 'Gimli'].includes(m.name));
+        // CORRECTED: The fellowship breaks, leaving only Frodo and Sam for the next leg of the quest.
+        state.fellowship = state.fellowship.filter(m => ['Frodo', 'Sam'].includes(m.name));
     },
     'moria': (state) => {
         const gandalf = state.fellowship.find(m => m.name === 'Gandalf');
@@ -63,6 +64,7 @@ export const storyTriggers = {
 const storySimulation = {
     'bree': (state) => storyTriggers.bree(state),
     'rivendell': (state) => {
+        storyTriggers.bree(state); // Must meet strider before rivendell
         storyTriggers.rivendell(state);
         storyTriggers.formFellowship(state);
         state.flags.frodoHasStingAndMithril = true;
@@ -70,15 +72,12 @@ const storySimulation = {
     },
     'moria': (state) => {
         // When debugging past moria, we assume Gandalf falls
-        storyTriggers.rivendell(state); // Make sure fellowship is formed
-        storyTriggers.formFellowship(state);
+        storySimulation.rivendell(state); // Run the full Rivendell simulation first
         storyTriggers.moria(state);
     },
     'amonhen': (state) => {
         // When debugging past amon hen, fellowship breaks
-        storyTriggers.rivendell(state);
-        storyTriggers.formFellowship(state);
-        storyTriggers.moria(state);
+        storySimulation.moria(state); // Run the full Moria simulation first
         storyTriggers.amonhen(state);
     },
 };
