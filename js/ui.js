@@ -1,7 +1,7 @@
 // js/ui.js
-// FINAL-FIX: Implemented dynamic SVG loading for a sustainable workflow.
+// FINAL-FIX: Implemented responsive button layouts and dynamic SVG loading.
 
-import { ICONS, journeyData } from './gameData.js';
+import { journeyData } from './gameData.js';
 import { gameState } from './gameState.js';
 
 // --- DOM Element References ---
@@ -13,36 +13,23 @@ const fellowshipDisplay = document.getElementById('fellowship-display');
 let animationFrame = 0;
 
 // --- SVG Loader ---
-/**
- * Fetches an SVG file and injects it into a target container.
- * @param {string} url - The relative path to the SVG file.
- * @param {string} targetElementId - The ID of the div to place the SVG in.
- */
 async function loadAndDisplaySVG(url, targetElementId) {
     try {
         const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.statusText}`);
-        }
+        if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
         const svgText = await response.text();
         const target = document.getElementById(targetElementId);
         if (target) {
             target.innerHTML = svgText;
-            // Add the generic class to the loaded SVG for styling
             const svgElement = target.querySelector('svg');
-            if (svgElement) {
-                svgElement.classList.add('encounter-svg');
-            }
+            if (svgElement) svgElement.classList.add('encounter-svg');
         }
     } catch (error) {
         console.error('Failed to load SVG:', error);
         const target = document.getElementById(targetElementId);
-        if (target) {
-            target.innerHTML = `<p class="error-text">Error: Could not load graphic.</p>`;
-        }
+        if (target) target.innerHTML = `<p class="error-text">Error: Could not load graphic.</p>`;
     }
 }
-
 
 // --- UI HELPER FUNCTIONS ---
 function getHealthStatus(health) {
@@ -53,26 +40,11 @@ function getHealthStatus(health) {
     return { text: 'Great' };
 }
 
-function getTimeOfDayString(hour) {
-    const h = Math.floor(hour % 24);
-    if (h >= 23 || h < 4) return 'Midnight';
-    if (h < 6) return 'Before Dawn';
-    if (h < 8) return 'Dawn';
-    if (h < 12) return 'Morning';
-    if (h < 14) return 'Noon';
-    if (h < 17) return 'Afternoon';
-    if (h < 19) return 'Late Afternoon';
-    if (h < 21) return 'Evening';
-    return 'Night';
-}
-
 // --- CORE UI UPDATE FUNCTIONS ---
-
 export function updateUI() {
     if (!gameState || Object.keys(gameState).length === 0) return;
     const day = Math.floor((gameState.totalHours - 11 + 24) / 24);
     
-    // CORRECTED: Removed icons to maintain pure vector style
     partyStatusDisplay.innerHTML = `
         <div>Day ${day}</div>
         <div>${journeyData[gameState.currentLocationKey].name}</div>
@@ -84,7 +56,6 @@ export function updateUI() {
 
     fellowshipDisplay.innerHTML = gameState.fellowship.map(m => {
         const healthInfo = getHealthStatus(m.health);
-        // CORRECTED: Removed color classes
         return `<div class="flex justify-between items-center text-sm">
                     <span>${m.name} (${m.race})</span>
                     <span class="font-semibold">${healthInfo.text}</span>
@@ -107,7 +78,6 @@ export function updateUI() {
 }
 
 // --- VIEW RENDERING FUNCTIONS ---
-
 export function showTravelView() {
     const currentLoc = journeyData[gameState.currentLocationKey];
     const nextLoc = journeyData[currentLoc.next];
@@ -122,10 +92,11 @@ export function showTravelView() {
             <div class="progress-bar" style="width: ${progress}%"></div>
         </div>
         <div id="travel-animation" class="text-center my-auto"></div>
-        <div class="mt-auto grid grid-cols-1 sm:grid-cols-3 gap-4 pt-6">
-            <button id="travel-button" class="game-button">Continue Journey</button>
-            <button id="camp-button" class="game-button">Make Camp</button>
-            <button id="map-button" class="game-button">View Map</button>
+        <!-- This now uses a responsive flex layout for buttons -->
+        <div class="mt-auto flex flex-col sm:flex-row gap-4 pt-6">
+            <button id="travel-button" class="game-button flex-1">Continue Journey</button>
+            <button id="camp-button" class="game-button flex-1">Make Camp</button>
+            <button id="map-button" class="game-button flex-1">View Map</button>
         </div>
     `;
     
@@ -168,21 +139,17 @@ export function showEncounterView(title, description, choices, encounter = null)
 
     if (!choices) choices = [];
 
-    if (choices.length === 1 && choices[0] && !choices[0].isPersistent) {
-        buttonContainer.className = 'flex justify-center';
-        choices[0].text = "Continue";
-    } else {
-        buttonContainer.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4';
-    }
+    // Simplified to a responsive flex layout for all button counts.
+    buttonContainer.className = 'flex flex-wrap justify-center gap-4';
 
     choices.forEach(choice => {
         const button = document.createElement('button');
         button.textContent = choice.text;
-        // CORRECTED: Removed all Tailwind classes to rely solely on the stylesheet.
-        button.className = 'game-button';
+        button.className = 'game-button flex-grow'; // Buttons will grow to fill space
         
-        if (choices.length === 1 && choices[0] && !choices[0].isPersistent) {
-            button.classList.add('w-full', 'sm:w-auto', 'sm:min-w-[200px]');
+        if (choices.length === 1) {
+            button.classList.add('sm:flex-grow-0', 'sm:min-w-[250px]'); // Don't grow on larger screens if only one button
+            choice.text = "Continue";
         }
 
         const isCompleted = choice.oneTime && gameState.completedTownActions.has(choice.id);
@@ -204,7 +171,7 @@ export function showLandmarkView(landmark) {
     );
 }
 
-export function showMapView() {
+export function showMapView() { 
     mainView.innerHTML = `
         <h3 class="font-title text-3xl mb-4 text-center">Map of Middle-earth</h3>
         <div class="flex-grow p-2">
@@ -226,7 +193,6 @@ export function initializeStartScreen() {
     gameContainer.style.display = 'none';
     startScreen.style.display = 'flex';
     
-    // Load the SVG for the start screen
     loadAndDisplaySVG('Graphics/00_Screen_TheShire.svg', 'start-screen-svg-container');
 
     const beginButton = document.getElementById('begin-journey-button');

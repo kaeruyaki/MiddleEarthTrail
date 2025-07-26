@@ -32,7 +32,7 @@ export const encounters = {
         trigger: 'landmark_arrival',
         choices: [
             { text: "Frodo resists the urge", action: ({gameState}) => { const healthLost = Math.floor(Math.random() * 20) + 15; gameState.fellowship.find(m => m.name === 'Frodo').health -= healthLost; gameState.morale -= 30; return `Aragorn leaps to defend the hobbits... Frodo is gravely wounded by a Morgul-blade!`; } },
-            { text: "Frodo puts on the Ring", action: ({gameState}) => { gameState.fellowship.find(m => m.name === 'Frodo').health -= 40; gameState.morale -= 40; return `Frodo vanishes, entering the wraith-world... He is fading fast! You must race to Rivendell!`; } }
+            { text: "Frodo puts on the Ring", action: ({gameState}) => { gameState.fellowship.find(m => m.name === 'Frodo').health -= 40; gameState.morale -= 40; return `You vanish, entering the wraith-world... He is fading fast! You must race to Rivendell!`; } }
         ]
     },
     'caradhras_pass': { /* ... existing encounter ... */ },
@@ -59,37 +59,66 @@ export const encounters = {
         name: "Bree",
         description: journeyData.bree.description,
         type: 'town',
-        svg: 'Graphics/01_Screen_Bree.svg', // <-- ADDED THIS LINE
+        svg: 'Graphics/01_Screen_Bree.svg',
         choices: [
-            { id: 'bree_gossip', text: "Listen for Rumors", isPersistent: true, action: ({ advanceTime }) => { advanceTime(1); return `You spend some time listening to chatter and hear tales of black riders on the road and troubles from the south.`; } },
-            { id: 'bree_trade', text: "Trade Supplies", isPersistent: true, condition: (gs) => gs.gold >= 15, action: ({ advanceTime, gameState }) => { advanceTime(1); gameState.gold -= 15; gameState.supplies += 25; return `The trade takes a short while. You get 25 supplies for 15 gold.`; } },
             { 
-                id: 'bree_eat_dinner', text: "Eat Dinner", oneTime: true, isPersistent: true, 
+                id: 'bree_gossip', 
+                text: "Listen for Rumors", 
+                isPersistent: true, 
+                action: ({ advanceTime }) => { 
+                    advanceTime(1); 
+                    return `You settle into a corner of the common room, listening to the low hum of conversation from the Big Folk and local Hobbits. The talk is of strange folk passing through Bree, and unsettling news from the South. More than one patron speaks in hushed tones of Black Riders seen on the East Road, questioning travelers with a cold dread in their voices. The shadow of the world outside the Shire feels suddenly, terribly close.`; 
+                } 
+            },
+            { 
+                id: 'bree_trade', 
+                text: "Trade Supplies", 
+                isPersistent: true, 
+                condition: (gs) => gs.gold >= 15, 
+                action: ({ advanceTime, gameState }) => { 
+                    advanceTime(1); 
+                    gameState.gold -= 15; 
+                    gameState.supplies += 25; 
+                    return `The trade takes a short while. You get 25 supplies for 15 gold.`; 
+                } 
+            },
+            { 
+                id: 'bree_eat_dinner', 
+                text: "Eat Dinner", 
+                oneTime: true, 
+                isPersistent: true, 
                 action: ({ advanceTime, gameState, meetStrider }) => { 
                     advanceTime(2); 
                     gameState.flags.ateDinner = true;
                     meetStrider(gameState);
-                    return `You find a table in a corner... a lean, hooded man motions you over. 'I am called Strider. If you value your life, you will listen to me.'`;
+                    return `The warmth of the common room and a pint of ale does much to lift your spirits. Merry and Pippin, feeling bold, begin to regale the locals with tales from the Shire. In a moment of folly, Pippin stands upon a table to sing. The attention this draws is unnerving, and in the commotion, you feel an unseen force press the Ring onto your finger. You vanish. The room erupts in a collective gasp. When you reappear, it is deathly quiet, full of suspicious and fearful eyes. From a dark corner, a lean, weather-beaten man, hooded and smoking a pipe, catches your eye. He motions you over. 'A dangerous trinket to be so careless with' he says in a low voice, his grey eyes glinting in the dim light. 'I am called Strider. I know the enemy that is hunting you, and it is closer than you realize. If you value your life and all that is good, you will come with me.'`;
                 } 
             },
             { 
-                id: 'bree_follow_strider', text: "Follow Strider", isLeaveAction: true, 
+                id: 'bree_follow_strider', 
+                text: "Follow Strider", 
+                isLeaveAction: true, 
                 condition: (gs) => gs.flags.ateDinner,
                 action: ({ advanceTime, gameState, showEncounterView, stopGameLoop }) => { 
                     advanceTime(8);
                     gameState.morale -= 10;
-                    showEncounterView("A Narrow Escape", "You follow the grim-faced ranger... Under the cover of darkness, Strider leads you out of Bree and into the wild.", [{ text: "Continue", action: () => { stopGameLoop(true); return null; } }]);
+                    showEncounterView("A Narrow Escape", "You follow the grim-faced ranger to a small, private parlour. He reveals that the name you travel under, 'Underhill', is known to the Enemy. As the night deepens, a terrifying shriek echoes from the street, followed by the splintering crash of the inn's front door. The Black Riders have found you. Under the cover of darkness, Strider leads you and your companions out a back window and into the wild, his knowledge of the tangled paths your only shield against the hunting Wraiths. He is now one of your company.", [{ text: "Continue", action: () => { stopGameLoop(true); return null; } }]);
                     return null;
                 } 
             },
             { 
-                id: 'bree_sleep', text: "Turn In for the Night", isLeaveAction: true, 
+                id: 'bree_sleep', 
+                text: "Turn In for the Night", 
+                isLeaveAction: true, 
                 action: ({ advanceTime, gameState, meetStrider, showEncounterView, checkGameOver, updateUI, stopGameLoop }) => {
                     advanceTime(8);
                     if (!gameState.flags.ateDinner && Math.random() < 0.5) {
-                        checkGameOver("A shattering crash rips you from sleep... The Ring has been taken.");
+                        // Death Outcome
+                        const deathDialogue = "You retire to your rooms, but sleep does not come easily. In the deepest hour of the night, a shattering crash rips you from your slumber. The door to your chamber hangs in splinters. Against the dim light of the hallway stand figures of utter blackness, their presence a wave of ice and terror that steals the breath from your lungs. A high, thin cry of hatred pierces the air, and before any defence can be made, a Morgul-blade glimmers with cold light and finds its mark. The world dissolves into shadow.";
+                        showEncounterView("The Ring is Lost", deathDialogue, [{ text: "The Ring has been Lost to Mordor. Game Over", action: () => { window.location.reload(); return null; }}]);
                     } else {
-                        const resultText = `In the deepest hour of the night, the door bursts inward... Your mysterious rescuer introduces himself as Strider. He is now one of your company.`;
+                        // Saved by Strider Outcome
+                        const resultText = `You retire to your rooms, but sleep does not come easily. In the deepest hour of the night, the door breaks inward with a crash. Black-robed figures, tall and terrible, fill the doorway. Just as a long, pale blade is raised, a hooded man leaps from the shadows, wielding a sword! 'Out the window!' he commands. You scramble into the night as he holds them back, escaping the attack, but not before the wraith's touch wounds you to the core. Your mysterious rescuer, who calls himself Strider, finds you in the darkness. He is now one of your company.`;
                         gameState.fellowship.find(m => m.name === 'Frodo').health -= 30;
                         gameState.morale -= 25;
                         updateUI();

@@ -1,20 +1,20 @@
-/* --- 1980s Vector Graphics Stylesheet (CRT Gold Outline Version) --- */
+/* --- 1980s Vector Graphics Stylesheet (Quicksand Gold Version) --- */
 
 /* --- Base Setup & Fonts --- */
 body {
-    font-family: 'Inter', sans-serif;
-    background-color: #1a1a1a; /* Dark grey background */
-    color: transparent; 
-    --line-color: #facc15; /* Default line color (medium yellow) */
-    --bright-line-color: #fefce8; /* Brightest line color (almost white) */
-    --glow-color: rgba(250, 204, 21, 0.8); /* Glow effect for medium yellow */
-    --bright-glow-color: rgba(254, 252, 232, 0.9); /* Glow for bright lines */
+    font-family: 'Edu NSW ACT Hand Cursive', sans-serif; /* NEW FONT */
+    background-color: #1a1a1a;
+    color: #facc15; /* Default text color */
+    --line-color: #facc15;
+    --bright-line-color: #fefce8;
+    --glow-color: rgba(250, 204, 21, 0.8);
+    --bright-glow-color: rgba(254, 252, 232, 0.9);
 }
 
 /* --- General Text Styling --- */
 p, label, div, span, h2, h3, h4 {
-    color: transparent;
-    -webkit-text-stroke: 1px var(--line-color);
+    color: var(--line-color); /* Use solid color */
+    -webkit-text-stroke: 0; /* Remove outline */
     text-shadow: 0 0 2px var(--glow-color);
 }
 
@@ -22,7 +22,6 @@ p, label, div, span, h2, h3, h4 {
 .font-title {
     font-family: 'IM Fell English SC', serif;
     -webkit-text-stroke: 1px var(--line-color);
-    text-shadow: 0 0 2px var(--glow-color);
     color: transparent;
 }
 
@@ -32,7 +31,7 @@ p, label, div, span, h2, h3, h4 {
     background-color: transparent;
     border: 1px solid var(--line-color);
     box-shadow: 0 0 2px var(--glow-color);
-    border-radius: 0; /* Sharp corners */
+    border-radius: 0;
 }
 
 .status-header {
@@ -43,27 +42,26 @@ p, label, div, span, h2, h3, h4 {
 .game-button {
     background: transparent;
     border: 1px solid var(--line-color);
-    color: transparent;
-    -webkit-text-stroke: 1px var(--line-color);
-    font-weight: bold;
+    color: var(--line-color);
+    -webkit-text-stroke: 0;
     padding: 0.75rem 1rem;
     transition: all 0.2s ease-in-out;
-    box-shadow: 0 0 2px var(--glow-color);
     border-radius: 0;
     transform-origin: center;
 }
 
 .game-button:hover:not(:disabled) {
     background-color: rgba(254, 252, 232, 0.1);
-    -webkit-text-stroke: 1px var(--bright-line-color);
+    color: var(--bright-line-color);
     border-color: var(--bright-line-color);
     box-shadow: 0 0 2px var(--bright-glow-color);
     transform: scale(1.02);
 }
 
 .game-button:disabled {
-    border-color: #71717a; /* Muted grey for disabled */
-    -webkit-text-stroke: 1px #71717a;
+    border-color: #71717a;
+    color: #71717a;
+    -webkit-text-stroke: 0;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
@@ -82,9 +80,15 @@ p, label, div, span, h2, h3, h4 {
 }
 .profession-card.selected .font-title,
 .profession-card.selected p {
-    -webkit-text-stroke: 1px var(--bright-line-color);
+    color: var(--bright-line-color);
+    -webkit-text-stroke: 0;
     text-shadow: 0 0 2px var(--bright-glow-color);
 }
+.profession-card .font-title {
+    color: transparent;
+    -webkit-text-stroke: 1px var(--line-color);
+}
+
 .progress-bar {
     background-color: var(--bright-line-color);
     box-shadow: 0 0 2px var(--bright-glow-color);
@@ -107,13 +111,11 @@ p, label, div, span, h2, h3, h4 {
 /* --- Map Styles --- */
 .map-landmark-label {
      font-size: 14px;
-     fill: none;
-     stroke: #fde68a;
-     stroke-width: 1px;
+     fill: #fde68a;
+     stroke: none;
      text-anchor: middle;
      pointer-events: none;
      font-weight: 600;
-     filter: drop-shadow(0 0 2px var(--glow-color));
 }
 .map-feature {
     fill: none;
@@ -128,13 +130,13 @@ p, label, div, span, h2, h3, h4 {
     filter: drop-shadow(0 0 2px var(--glow-color));
 }
 .map-landmark {
-    fill: none;
+    fill: transparent;
     stroke: var(--bright-line-color);
     stroke-width: 1.5px;
     filter: drop-shadow(0 0 2px var(--bright-glow-color));
 }
 .map-player {
-    fill: none; 
+    fill: transparent; 
     stroke: var(--bright-line-color);
     stroke-width: 2px;
     filter: drop-shadow(0 0 2px var(--bright-glow-color));
