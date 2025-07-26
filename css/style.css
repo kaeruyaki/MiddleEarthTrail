@@ -2,7 +2,7 @@
 
 /* --- Base Setup & Fonts --- */
 body {
-    font-family: 'Edu NSW ACT Hand Cursive', sans-serif; /* NEW FONT */
+    font-family: 'Quicksand', sans-serif;
     background-color: #1a1a1a;
     color: #facc15; /* Default text color */
     --line-color: #facc15;
@@ -23,6 +23,8 @@ p, label, div, span, h2, h3, h4 {
     font-family: 'IM Fell English SC', serif;
     -webkit-text-stroke: 1px var(--line-color);
     color: transparent;
+    /* CORRECTED: Replaced text-shadow with a cleaner filter for a true outline glow */
+    filter: drop-shadow(0 0 2px var(--glow-color));
 }
 
 /* --- Main Layout Containers --- */
@@ -44,8 +46,10 @@ p, label, div, span, h2, h3, h4 {
     border: 1px solid var(--line-color);
     color: var(--line-color);
     -webkit-text-stroke: 0;
+    font-weight: bold;
     padding: 0.75rem 1rem;
     transition: all 0.2s ease-in-out;
+    box-shadow: 0 0 2px var(--glow-color);
     border-radius: 0;
     transform-origin: center;
 }
@@ -147,3 +151,4 @@ p, label, div, span, h2, h3, h4 {
     border-radius: 0 !important;
     box-shadow: none !important;
 }
+
