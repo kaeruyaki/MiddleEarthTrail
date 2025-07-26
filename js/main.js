@@ -1,5 +1,5 @@
 // js/main.js
-// FINAL-FIX: Centralized event handling to fix dynamic choices and other bugs.
+// FINAL-FIX: Corrected event logic order and restored missing encounters.
 
 import { setupNewGame, meetStrider, storyTriggers, gameState } from './gameState.js';
 import { 
@@ -38,22 +38,24 @@ const canonicalPath = ['shire', 'bree', 'weathertop', 'trollshaws', 'rivendell',
 
 function checkGameOver(reason = null) {
     if (gameState.isGameOver) return;
-    
-    let endReason = reason;
-    if (!endReason) {
+
+    let finalReason = reason;
+
+    if (!finalReason) {
         const frodo = gameState.fellowship.find(m => m.name === 'Frodo');
-        if (frodo && frodo.health <= 0) endReason = "the Ringbearer has fallen.";
-        else if (gameState.fellowship.filter(m => m.health > 0).length === 0) endReason = `the entire company has been lost.`;
-        else if (gameState.food <= 0) endReason = "you have run out of food.";
-        else if (gameState.morale <= 0) endReason = `company morale has broken.`;
+        if (frodo && frodo.health <= 0) finalReason = "The Ringbearer has fallen. The quest is over.";
+        else if (gameState.fellowship.filter(m => m.health > 0).length === 0) finalReason = `The entire company has been lost. The quest is over.`;
+        else if (gameState.food <= 0) finalReason = "The company has perished from starvation. The quest is over.";
+        else if (gameState.morale <= 0) finalReason = `The company's morale has broken. The quest is over.`;
     }
 
-    if (endReason) {
+    if (finalReason) {
         gameState.isGameOver = true;
         stopGameLoop();
-        showEncounterView("Journey's End", `<p>The quest has failed because ${endReason}. The world will fall into shadow.</p>`, [{ text: "Start Anew", action: () => window.location.reload() }]);
+        showEncounterView("The Quest has Failed", finalReason, [{ text: "The Ring has been Lost to Mordor. Game Over", action: () => window.location.reload() }]);
     }
 }
+
 
 function advanceTime(hours) {
     if (gameState.isGameOver) return;
@@ -197,7 +199,6 @@ function startGameLoop() {
     }
     
     gameState.mode = 'traveling';
-    // CORRECTED: This function now correctly shows the travel view when the loop starts.
     showTravelView(); 
 
     clearInterval(gameLoopInterval);
@@ -207,7 +208,6 @@ function startGameLoop() {
 function stopGameLoop(andShowTravelView = false) {
     clearInterval(gameLoopInterval);
     if (gameState.isGameOver) return;
-    // CORRECTED: The mode must be set before showing the view.
     gameState.mode = 'paused'; 
     if (andShowTravelView) {
         showTravelView();
@@ -283,15 +283,16 @@ function showEvent(encounter) {
         meetStrider, checkGameOver, startGameLoop
     };
 
+    // CORRECTED: Run onArrival logic BEFORE resolving choices.
+    if (encounter.onArrival) {
+        encounter.dialogue = encounter.onArrival(dependencies);
+    }
+
     let resolvedChoices = encounter.choices;
     if (typeof encounter.choices === 'function') {
         resolvedChoices = encounter.choices(dependencies);
     }
     
-    if (encounter.onArrival) {
-        encounter.dialogue = encounter.onArrival(dependencies);
-    }
-
     showEncounterView(encounter.name, encounter.description, resolvedChoices, encounter);
 }
 
@@ -373,7 +374,6 @@ document.addEventListener('resolveEncounterChoice', (e) => {
         showEvent(encounter);
         updateUI();
     } else {
-        // CORRECTED: The final "Continue" button now seamlessly restarts the journey.
         showEncounterView(encounter.name, result, [{ text: "Continue", action: startGameLoop }]);
         updateUI();
     }
